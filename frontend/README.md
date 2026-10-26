@@ -28,4 +28,4 @@ npm run build
 
 El archivo `Entrevistas.csv` no se encontró entre los archivos disponibles en el espacio de trabajo. Los hallazgos mostrados se basan en la descripción de entrevistas incluida en `Modelo_Negocio.docx` y en el problema adicional de devoluciones indicado por el equipo; deben contrastarse con las respuestas originales.
 
-Esta interfaz todavía no usa las cuentas ni el inventario del backend de fase 1: conserva datos de demostración en el navegador. La API Python ya ofrece estado, tiendas y sesión para conectar las siguientes fases. Aún no hay procesamiento real de entradas, ventas, mermas ni historial de auditoría en la interfaz.
+La pantalla de demostración inicial todavía conserva datos locales del navegador. El botón «Gestión real de bodega» abre un panel separado conectado a la API Python para productos, lotes, ingresos, ventas presenciales, mermas, ajustes y ofertas. Las compras web, pagos, ML y chatbot se añadirán en las siguientes fases.

@@ -1,12 +1,12 @@
 # DESSOF · demo local de bodegas
 
-Fase 1: base de datos, cuentas, tres tiendas de muestra, 12 productos, 15 lotes y API básica. El frontend React original sigue siendo **visual**: todavía guarda su inventario de ejemplo en el navegador. Las ventas, reservas, ML, chatbot y Mercado Pago se implementan en las fases siguientes.
+Fases 1 y 2: base de datos, cuentas, tres tiendas de muestra, 12 productos, 15 lotes y gestión real de bodega. La pantalla original de React sigue siendo un prototipo visual separado; entra en **Gestión real de bodega** para usar productos, lotes, ingresos, ventas presenciales, mermas, ajustes y ofertas conectados a PostgreSQL. Las compras web, reservas, ML, chatbot y Mercado Pago se implementan en las fases siguientes.
 
 ## Estructura
 
 ```text
-backend/       Django: modelos, migraciones, API y pruebas
-frontend/      React/Vite existente; cliente API inicial
+backend/       Django: modelos, servicios transaccionales, API y pruebas
+frontend/      React/Vite existente y panel de gestión real
 compose.yaml   PostgreSQL 16 local
 ```
 
@@ -47,6 +47,6 @@ npm run build
 
 Las pruebas de Python usan PostgreSQL real, no SQLite. Para una base distinta, configura `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST` y `POSTGRES_PORT`. Los secretos y dependencias locales están ignorados por Git.
 
-La API inicial expone `GET /api/v1/health`, `GET /api/v1/stores`, `GET /api/v1/auth/csrf`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout` y `GET /api/v1/auth/me`. Login y demás escrituras requieren CSRF; los datos de sesión se mantienen en cookie HttpOnly.
+La API expone sesión y tiendas (`/api/v1/auth/*`, `/api/v1/stores`) y rutas internas bajo `/api/v1/store/*` para productos, lotes, ingresos, ventas locales, mermas, ajustes, movimientos y ofertas. Solo el dueño puede ingresar stock, ajustar y modificar ofertas; el empleado registra ventas y consulta sin ver costos. Login y demás escrituras requieren CSRF; los datos de sesión se mantienen en cookie HttpOnly. Las operaciones de stock usan claves de idempotencia y bloqueos de PostgreSQL.
 
 Los documentos de alcance y arquitectura están un nivel arriba, en los dos archivos `definicion de proyecto DESSOF - *.md`.

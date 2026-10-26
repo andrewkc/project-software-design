@@ -1,4 +1,4 @@
-"""Phase 1 schema. Business writes will go through transaction services in phase 2."""
+"""Store, inventory, order and pricing schema. Business writes use services."""
 
 import uuid
 from datetime import timedelta

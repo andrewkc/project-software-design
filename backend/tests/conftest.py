@@ -47,7 +47,7 @@ def lot(product):
     return Lot.objects.create(product=product, code="ALM-01", received_date=expiry - timedelta(days=20),
                               expiry_date=expiry,
                               sales_close_at=datetime.combine(expiry - timedelta(days=1), time(23, 59, 59), ZoneInfo("America/Lima")),
-                              total_cost=Decimal("50.00"), received_qty=1250, physical_qty=1250)
+                              total_cost=Decimal("25.00"), received_qty=1250, physical_qty=1250)
 
 
 @pytest.fixture
