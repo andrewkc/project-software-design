@@ -1,12 +1,12 @@
 # DESSOF · demo local de bodegas
 
-Fases 1 y 2: base de datos, cuentas, tres tiendas de muestra, 12 productos, 15 lotes y gestión real de bodega. La pantalla original de React sigue siendo un prototipo visual separado; entra en **Gestión real de bodega** para usar productos, lotes, ingresos, ventas presenciales, mermas, ajustes y ofertas conectados a PostgreSQL. Las compras web, reservas, ML, chatbot y Mercado Pago se implementan en las fases siguientes.
+Fases 1 a 3: base de datos, cuentas, tres tiendas de muestra, 12 productos, 15 lotes, gestión real de bodega y compra local simulada. Entra en **Gestión real de bodega** para gestionar inventario y en **Comprar en bodegas** para ver ofertas, armar una cesta, reservar y simular un pago. La pantalla original sigue siendo un prototipo visual separado. Mercado Pago, Gemini y el modelo de ML quedan para la fase 4; esta fase no usa dinero ni servicios externos.
 
 ## Estructura
 
 ```text
 backend/       Django: modelos, servicios transaccionales, API y pruebas
-frontend/      React/Vite existente y panel de gestión real
+frontend/      React/Vite, panel de gestión y panel de comprador
 compose.yaml   PostgreSQL 16 local
 ```
 
@@ -47,6 +47,6 @@ npm run build
 
 Las pruebas de Python usan PostgreSQL real, no SQLite. Para una base distinta, configura `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST` y `POSTGRES_PORT`. Los secretos y dependencias locales están ignorados por Git.
 
-La API expone sesión y tiendas (`/api/v1/auth/*`, `/api/v1/stores`) y rutas internas bajo `/api/v1/store/*` para productos, lotes, ingresos, ventas locales, mermas, ajustes, movimientos y ofertas. Solo el dueño puede ingresar stock, ajustar y modificar ofertas; el empleado registra ventas y consulta sin ver costos. Login y demás escrituras requieren CSRF; los datos de sesión se mantienen en cookie HttpOnly. Las operaciones de stock usan claves de idempotencia y bloqueos de PostgreSQL.
+La API expone sesión y registro de compradores (`/api/v1/auth/*`), tiendas, ofertas públicas (`/api/v1/offers`), pedidos (`/api/v1/orders`), pago **simulado local** (`/api/v1/orders/{id}/simulate-payment`) y asistente local de solo lectura (`/api/v1/chat`). Las rutas `/api/v1/store/*` permiten gestionar inventario y ofertas. Solo el dueño puede ingresar stock, ajustar y modificar ofertas; el empleado registra ventas y consulta sin ver costos. Login y demás escrituras requieren CSRF; los datos de sesión se mantienen en cookie HttpOnly. Pedidos y movimientos usan claves de idempotencia y bloqueos de PostgreSQL. Un pedido reserva por hasta 10 minutos; una aprobación local consume la reserva y descuenta inventario una sola vez; rechazo o vencimiento la libera. La aprobación simulada no prueba la integración con Mercado Pago.
 
 Los documentos de alcance y arquitectura están un nivel arriba, en los dos archivos `definicion de proyecto DESSOF - *.md`.

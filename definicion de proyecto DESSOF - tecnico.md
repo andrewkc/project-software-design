@@ -214,10 +214,8 @@ Las pruebas de reglas usan reloj inyectable y dobles de servicios externos. Una 
 | --- | --- |
 | 1 | Migraciones, usuarios/tiendas y fixtures de 3 bodegas/12 productos con duración >=7 días. |
 | 2 | API y React de inventario, lotes, ingresos, ventas locales, merma e historial. |
-| 3 | Catálogo público, cesta, pedidos, reservas y pago externo de prueba con conciliación. |
-| 4 | Generador/dataset, modelo entrenado, informe comparativo y recomendaciones. |
-| 5 | Límites, activación explícita del modo automático y aplicación auditada. |
-| 6 | Chatbot de solo lectura, pruebas integrales, instalación local y demostración. |
+| 3 | Catálogo público, cesta, pedidos, reservas, pago simulado local y asistente local de solo lectura. Sin cuentas, claves ni llamadas externas. |
+| 4 | Generador/dataset, modelo ML evaluado, recomendaciones y modo automático; sustitución del pago simulado por Mercado Pago de prueba y del asistente local por Gemini; pruebas integrales. Las cuentas y claves externas se solicitan al integrar esta fase. |
 
 ## 12. Referencias técnicas a revisar al implementar
 

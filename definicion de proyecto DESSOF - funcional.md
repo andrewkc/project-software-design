@@ -150,7 +150,7 @@ Tres tiendas ficticias: Mercado Verde, Dulce y Fresco, y Despensa Cercana; cuatr
 
 ## 10. Orden de construcción
 
-Modelo y reglas → autenticación/tiendas → catálogo, lotes e inventario → venta presencial → ofertas, cesta y reserva → Mercado Pago de pruebas → ML y evaluación → política automática → chatbot → pruebas integrales. Se integra la pasarela temprano para descubrir a tiempo cualquier requisito de cuenta o red.
+Modelo y reglas → autenticación/tiendas → catálogo, lotes e inventario → venta presencial → ofertas, cesta, reserva y pago simulado local → asistente local de solo lectura → ML y evaluación → política automática → Mercado Pago de pruebas y Gemini → pruebas integrales. Las dependencias externas se integran en la fase 4; el pago simulado de la fase 3 no acredita una integración real.
 
 ## 11. Dependencias pendientes de implementación
 

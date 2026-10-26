@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getApiHealth } from "./api";
 import StorePanel from "./StorePanel";
+import BuyerPanel from "./BuyerPanel";
 
 const starterProducts = [
   { id: 1, name: "Leche Gloria entera", category: "Lácteos", icon: "🥛", stock: 8, unit: "unid.", price: 4.5, expires: "2026-10-20" },
@@ -162,6 +163,7 @@ function App() {
   }
 
   if (screen === "store") return <StorePanel onExit={() => setScreen("signup")} />;
+  if (screen === "buyer") return <BuyerPanel onExit={() => setScreen("signup")} />;
 
   if (screen === "signup") {
     return (
@@ -197,7 +199,7 @@ function App() {
               <button className="button button-primary button-full" type="submit">Crear mi cuenta <Icon name="arrow" size={18} /></button>
             </form>
             <p className="terms-copy">Al continuar, aceptas nuestros <a href="#terminos" onClick={(event) => event.preventDefault()}>Términos de uso</a> y <a href="#privacidad" onClick={(event) => event.preventDefault()}>Política de privacidad</a>.</p>
-            <div className="signup-login">¿Ya tienes una cuenta? <button type="button" onClick={() => { setUser({ name: "María", email: "maria@bodega.pe", store: "Bodega San Martín" }); setScreen("app"); }}>Ingresa a la demo</button> · <button type="button" onClick={() => setScreen("store")}>Gestión real de bodega</button></div>
+            <div className="signup-login">¿Ya tienes una cuenta? <button type="button" onClick={() => { setUser({ name: "María", email: "maria@bodega.pe", store: "Bodega San Martín" }); setScreen("app"); }}>Ingresa a la demo</button> · <button type="button" onClick={() => setScreen("store")}>Gestión real de bodega</button> · <button type="button" onClick={() => setScreen("buyer")}>Comprar en bodegas</button></div>
           </div>
           <span className="prototype-note"><Icon name="shield" size={15} /> Prototipo visual · {backendReady ? "API Python disponible" : "API Python sin conexión"} · esta pantalla aún usa datos locales</span>
         </section>

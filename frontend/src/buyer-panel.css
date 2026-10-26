@@ -1,0 +1,33 @@
+.buyer-shell { min-height: 100vh; background: #f7f6ef; color: #173b31; font-family: Inter, system-ui, sans-serif; }
+.buyer-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 2rem; background: #173b31; color: white; flex-wrap: wrap; }
+.buyer-header div { display: flex; align-items: center; gap: .7rem; }
+.buyer-header button, .buyer-shell button { cursor: pointer; }
+.buyer-header button { background: #e6f3db; color: #173b31; border: 0; border-radius: .5rem; padding: .55rem .8rem; }
+.buyer-main { max-width: 1200px; margin: auto; padding: 1.5rem; display: grid; gap: 1.3rem; }
+.buyer-hero { background: #dcebd7; border-radius: 1.2rem; padding: 2rem; }
+.buyer-hero h1 { margin: .4rem 0; font-size: clamp(1.8rem, 4vw, 3rem); }
+.buyer-hero p { margin: 0; max-width: 680px; }
+.buyer-tag, .buyer-category { font-size: .75rem; font-weight: 800; letter-spacing: .08em; }
+.buyer-select { display: grid; gap: .35rem; max-width: 500px; font-weight: 700; }
+.buyer-select select, .buyer-auth input { padding: .7rem; border: 1px solid #bbcfbf; border-radius: .55rem; font: inherit; background: white; }
+.buyer-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.3rem; align-items: start; }
+.buyer-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .9rem; }
+.buyer-card, .buyer-basket, .buyer-auth, .buyer-order, .buyer-history { background: white; border: 1px solid #d9e4d8; border-radius: 1rem; padding: 1.1rem; box-shadow: 0 3px 14px #173b310b; }
+.buyer-card h3 { margin: .5rem 0; }
+.buyer-card p { color: #586c61; font-size: .88rem; }
+.buyer-card-bottom, .buyer-total, .buyer-line { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.buyer-card-bottom button, .buyer-primary, .buyer-auth form button, .buyer-actions button { border: 0; border-radius: .55rem; padding: .65rem .9rem; background: #1b7655; color: white; font-weight: 700; }
+.buyer-shell button:disabled { opacity: .5; cursor: not-allowed; }
+.buyer-basket { position: sticky; top: 1rem; }
+.buyer-line { border-top: 1px solid #e5ede3; padding: .7rem 0; }
+.buyer-line small { display: block; color: #65786b; }
+.buyer-line button { border: 1px solid #c7d9c5; background: white; border-radius: .4rem; padding: .2rem .5rem; margin: 0 .3rem; }
+.buyer-total { border-top: 1px solid #dae6d7; padding-top: .8rem; }
+.buyer-primary { width: 100%; margin-top: 1rem; }
+.buyer-auth form { display: flex; align-items: end; gap: .8rem; flex-wrap: wrap; }
+.buyer-auth label { display: grid; gap: .3rem; }
+.buyer-link { border: 0; background: none; color: #176d50; text-decoration: underline; margin-top: .6rem; }
+.buyer-message { padding: .8rem 1rem; background: #e8f3df; border-radius: .6rem; }
+.buyer-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.buyer-history button { display: block; width: 100%; text-align: left; margin: .4rem 0; padding: .65rem; border: 1px solid #d4e3d3; border-radius: .5rem; background: #f7fbf5; }
+@media (max-width: 760px) { .buyer-layout { grid-template-columns: 1fr; } .buyer-basket { position: static; } .buyer-main { padding: 1rem; } .buyer-header { padding: 1rem; } }

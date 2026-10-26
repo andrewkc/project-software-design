@@ -2,6 +2,8 @@
 
 from django.db import IntegrityError
 from django.contrib.auth import authenticate, login as django_login, logout as django_logout
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework.decorators import api_view, permission_classes
@@ -9,8 +11,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import InventoryMovement, Lot, Offer, OfferLimit, Product, Store, User
-from . import services
+from .models import InventoryMovement, Lot, Offer, OfferLimit, Order, Product, Store, User
+from . import chat, commerce, services
 
 
 def user_payload(user):
@@ -70,6 +72,91 @@ def stores(request):
     data = [{"id": str(store.id), "name": store.name, "address": store.address, "opening_hours": store.opening_hours}
             for store in Store.objects.filter(active=True).order_by("name")]
     return Response(data)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@csrf_protect
+def register_customer(request):
+    def create():
+        email = str(request.data.get("email", "")).strip().lower()
+        name = services.required_text(request.data.get("name"), "Nombre", 120)
+        password = request.data.get("password")
+        if not isinstance(password, str):
+            raise services.DomainError("INVALID_PASSWORD", "Contraseña inválida")
+        user = User(email=email, name=name, role=User.Role.CUSTOMER)
+        try:
+            validate_password(password, user)
+        except ValidationError as error:
+            raise services.DomainError("INVALID_PASSWORD", "; ".join(error.messages)) from error
+        try:
+            return User.objects.create_user(email=email, password=password, name=name, role=User.Role.CUSTOMER)
+        except ValidationError as error:
+            raise services.DomainError("INVALID_DATA", "; ".join(error.messages)) from error
+    return _execute(create, user_payload, 201)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def public_offers(request):
+    def read():
+        commerce.expire_due_orders()
+        return [commerce.offer_payload(offer) for offer in commerce.public_offers(request.query_params.get("store_id"))]
+    return _execute(read)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def public_offer(request, offer_id):
+    def read():
+        commerce.expire_due_orders()
+        offer = next((item for item in commerce.public_offers() if item.id == offer_id), None)
+        if not offer:
+            raise services.DomainError("NOT_FOUND", "Oferta no encontrada", 404)
+        return commerce.offer_payload(offer)
+    return _execute(read)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def orders(request):
+    if request.method == "POST":
+        def create():
+            commerce.expire_due_orders()
+            return commerce.create_order(request.user, request.data)
+        return _execute(create, commerce.order_payload, 201)
+
+    def read():
+        commerce.require_customer(request.user)
+        commerce.expire_due_orders()
+        return [commerce.order_payload(order) for order in Order.objects.select_related("store").filter(
+            customer=request.user).order_by("-created_at")[:50]]
+    return _execute(read)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def order_detail(request, order_id):
+    def read():
+        order = commerce.get_order(request.user, order_id)
+        commerce.expire_order(order.id)
+        order.refresh_from_db()
+        return commerce.order_payload(order)
+    return _execute(read)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def simulated_payment(request, order_id):
+    return _execute(lambda: commerce.simulate_payment(request.user, order_id,
+                     request.data.get("decision")), commerce.order_payload)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@csrf_protect
+def local_chat(request):
+    return _execute(lambda: chat.answer(request.user, request.data.get("question")))
 
 
 def _execute(action, serialize=lambda result: result, success=200):

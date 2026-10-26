@@ -82,7 +82,7 @@ export default function StorePanel({ onExit }) {
     <main className="ops-main">
       {loading && <p>Comprobando sesión…</p>}
       {!loading && !user && <ActionForm title="Ingresar a la bodega" onSubmit={login} button="Ingresar"><Field label="Correo" name="email" type="email" /><Field label="Contraseña" name="password" type="password" /></ActionForm>}
-      {!loading && user && !staff && <p>Esta sección es para dueños y empleados. El catálogo para clientes se añadirá en la fase 3.</p>}
+      {!loading && user && !staff && <p>Esta sección es para dueños y empleados. Usa «Comprar en bodegas» para ver el catálogo de cliente.</p>}
       {message && <p className="ops-message" role="status">{message}</p>}
       {staff && <>
         <section className="ops-intro"><h1>Inventario de tu bodega</h1><p>Los saldos y movimientos provienen de PostgreSQL. La venta presencial descuenta primero los lotes aptos más próximos a cerrar.</p></section>
