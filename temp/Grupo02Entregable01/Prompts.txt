@@ -1,0 +1,73 @@
+Estamos preparando una aplicación sencilla para la gestión interna de bodegas y minimarkets. Queremos registrar entradas y salidas, consultar inventario y vencimientos y ayudar al jefe a supervisar a sus empleados.
+
+Revisa la propuesta y la consigna adjuntas. Es un MVP académico de estudiantes de Ingeniería Electrónica: necesitamos algo que podamos desarrollar y explicar. Identifica el problema principal y señala funciones innecesarias o difíciles de justificar. No incluyas acceso para compradores, vista pública, proveedores, pedidos ni pagos. Antes de ampliar el alcance, indícanos por qué sería necesario.
+
+Revisa el CSV adjunto e identifica los hallazgos sobre inventario, vencimientos, registro de ventas, participación de empleados y facilidad de uso.
+
+Relaciona cada hallazgo con la pregunta y respuesta que lo respalda. No inventes información. Si una función que proponemos no aparece en las entrevistas, indícala como propuesta pendiente de validación.
+
+Son entrevistas exploratorias para orientar el proyecto. Resume sus resultados en un apartado fácil de actualizar, sin repetir cantidades de entrevistas en distintas secciones. Usa expresiones como “la totalidad de los participantes consultados” solo cuando las respuestas lo respalden.
+
+La aplicación tiene tres roles: administrador de la app, jefe de bodega y empleado de bodega. El comprador no usa el sistema.
+
+El administrador mantiene cuentas y accesos. El jefe administra su bodega, productos, empleados, precios y promociones. También puede hacer todo lo que hace el empleado. El empleado registra entradas y salidas y consulta inventario y vencimientos. Las salidas pueden ser ventas o retiros por vencimiento o deterioro.
+
+La IA sugiere descuentos y reposiciones, pero el jefe decide si los aprueba, modifica o rechaza. Aprobar una reposición no realiza una compra.
+
+Ayúdanos a organizar los casos de uso sin duplicar funciones. Distingue entre gestionar una cuenta de la app y asignar un empleado a una bodega. Mantén el alcance sencillo y señala contradicciones antes de redactar.
+
+Hemos considerado ocho entidades: Cuenta de usuario, Bodega, Producto, Lote, Movimiento de inventario, Detalle de movimiento, Promoción y Sugerencia de IA.
+
+Las ventas se registran como salidas con sus detalles, evitando descontar dos veces el inventario. Cada movimiento identifica a su responsable. Las promociones son internas y se utilizan para calcular los precios de las ventas registradas.
+
+Revisa si las entidades cubren el alcance y propón atributos, relaciones, multiplicidades y reglas básicas. No agregues entidades para compradores, proveedores o pagos. Queremos un modelo conceptual fácil de explicar, sin métodos ni detalles de implementación.
+
+Genera el código PlantUML de los siguientes casos:
+
+CU-01 Administrar cuentas y accesos de la aplicación.
+CU-02 Gestionar los datos de la bodega y sus productos.
+CU-03 Gestionar empleados de la bodega.
+CU-04 Registrar entradas de mercadería.
+CU-05 Registrar salidas por venta, vencimiento o deterioro.
+CU-06 Consultar inventario y alertas de vencimiento.
+CU-07 Supervisar los registros de los empleados.
+CU-08 Gestionar precios, descuentos y promociones.
+CU-09 Revisar y aprobar sugerencias de reposición.
+
+Asocia al administrador con CU-01; al jefe con CU-02, CU-03, CU-07, CU-08 y CU-09; y al empleado con CU-04, CU-05 y CU-06. Representa mediante generalización que el jefe también realiza las funciones del empleado.
+
+Usa el límite “Gestión interna de bodegas”. No incluyas al cliente ni agregues casos nuevos. Entrega solo código, con presentación académica en blanco y negro, sin notas visibles ni relaciones include o extend innecesarias.
+
+Genera el código PlantUML del modelo conceptual con las ocho entidades y los atributos que acordamos.
+
+Cada bodega tiene un jefe y puede tener varios empleados. Un jefe o empleado pertenece como máximo a una bodega. El administrador de la app no necesita pertenecer a ninguna. Cada bodega administra productos y movimientos; cada producto puede tener lotes, promociones y sugerencias de IA.
+
+Cada movimiento tiene un responsable y contiene uno o más detalles. Cada detalle corresponde a un lote. Utiliza composición entre movimiento y detalle. Conserva las relaciones opcionales con el jefe que aprueba promociones o revisa sugerencias pendientes.
+
+No agregues una entidad de comprador. Mantén las promociones como información interna de la bodega. Incluye multiplicidades y organiza el diagrama evitando cruces y etiquetas superpuestas. No incluyas métodos ni notas visibles.
+
+Genera el código PlantUML del flujo de CU-05 con carriles para “Jefe o empleado” y “Sistema”.
+
+El responsable selecciona motivo, productos, lotes y cantidades. El sistema valida cantidades positivas y stock suficiente. Si es una venta, verifica que los productos puedan venderse, aplica precios y promociones vigentes y calcula el total. Si es por vencimiento o deterioro, registra una merma.
+
+Muestra un resumen y solicita confirmación. Al confirmar, comprueba nuevamente la disponibilidad, guarda el movimiento con sus detalles y responsable y descuenta las existencias una sola vez. Ante cancelación o error, no modifica el inventario.
+
+Usa inicio, decisiones y finales, en blanco y negro y sin notas visibles. Es un registro interno: no representa una compra dentro de la app ni procesa pagos.
+
+Genera el código PlantUML de CU-08 para revisar un descuento sugerido por IA, con carriles para “Jefe de bodega” y “Sistema”.
+
+El jefe consulta las sugerencias pendientes y selecciona una. Revisa el producto, las existencias, el precio sugerido y la justificación. Puede rechazarla, mantener el precio o modificarlo.
+
+Si continúa, define la vigencia. El sistema valida precio, fechas y stock apto y muestra un resumen. El jefe confirma y el sistema guarda la decisión y la promoción para utilizarla en las ventas registradas durante su vigencia.
+
+Incluye ausencia de sugerencias, rechazo, datos inválidos y cancelación. No incluyas publicación, consulta de compradores ni descuentos aprobados automáticamente. Usa blanco y negro, sin notas visibles.
+
+Te adjunto un Word con las decisiones del equipo y toda la información acordada, junto con la consigna, las entrevistas y los diagramas finales.
+
+Redacta el entregable completo en Markdown: organización objetivo, actores, trabajadores, nueve casos de uso detallados, ocho entidades, diagramas, reglas y matriz de trazabilidad. Cada ficha debe incluir objetivo, participantes, responsable, precondiciones, postcondiciones, entidades, flujo principal, alternativas, excepciones y reglas relacionadas.
+
+El alcance es una aplicación de gestión interna con administrador, jefe y empleado. Elimina referencias al comprador como usuario, al antiguo CU-10 y a la vista pública. Las promociones se utilizan internamente para registrar ventas.
+
+Mantén una redacción académica sencilla. No agregues funciones, resultados ni datos no proporcionados. Distingue las necesidades observadas en entrevistas de las funciones propuestas pendientes de validación.
+
+Organiza README.md, la carpeta img y los anexos dentro del ZIP. Conserva los diagramas proporcionados, usa rutas relativas y verifica la consistencia entre códigos, fichas, reglas y trazabilidad. Los prompts se entregarán en un TXT aparte.

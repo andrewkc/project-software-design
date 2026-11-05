@@ -1,0 +1,26 @@
+﻿"Submission Date","¿Qué tipo de negocio tiene?","¿Cuál es el principal problema que tiene actualmente para manejar su negocio?","¿Cómo controla actualmente su stock?","¿Cómo decide los precios o descuentos de sus productos?","¿Qué situaciones le generan más problemas? Elija hasta 3.","¿Quiénes trabajan normalmente en el puesto?","Si trabajan varias personas, ¿quién revisa o controla el stock, las ventas y los precios?","Cuando llega mercadería, ¿cómo registra lo que entra?","Cuando vende un producto, ¿cómo registra lo que salió?","¿Qué información suele registrar o revisar?","¿Qué funciones le serían más útiles? Elija máximo 2.","¿Qué tendría que tener esta aplicación para que realmente la use?","¿Qué haría que no la use?","Si existiera una versión sencilla que resolviera su principal problema, ¿estaría dispuesto a probarla durante una semana?"
+"sept 11, 2026",Minimarket,"Pérdidas por frutas vencidas en diversas temporadas.
+
+Proveedores no cambian productos vencidos.",Cuaderno/papel,"Según el precio del proveedor","Productos vencidos o deteriorados
+Cambios en el precio del proveedor
+Devoluciones o cambios","Dueño + empleados",Dueño/jefe,"Usa la boleta/factura como referencia","Boleta o ticket","Precio de compra
+Precio de venta
+Fecha de ingreso
+Fecha de vencimiento
+Ganancia o margen","Alertas de productos próximos a vencer
+Sugerencias de precios y descuentos","Fácil de usar, que reemplaze la labor del mercaderista, el cual viene mensualmente a realizar el seguimiento de productos y ofrecer nueva mercadería. Otras empresas tienen su aplicación como Coca Cola y Backus.","Es complicada
+Toma demasiado tiempo registrar productos
+Necesita mucho Internet","Tal vez"
+"sept 11, 2026",Bodega,"No cambian los productos vencidos. Ejemplo:
+
+Perdio 48 soles en una caja de Sublime.","De memoria","Comparando con otros puestos","Productos que no se venden
+Productos vencidos o deteriorados
+Devoluciones o cambios","Dueño + familiares",,Cuaderno/papel,"De memoria","Precio de compra
+Precio de venta
+Proveedor
+Descuentos","Registrar ventas/boletas y descontar stock automáticamente
+Alertas de productos próximos a vencer","Facil de usar. Ya usa otras aplicaciones para hacer pedidos a proveedores como Coca Cola, Backus, etc.","Toma demasiado tiempo registrar productos","Tal vez"
+"sept 10, 2026",Bodega,"Organizar la mercadería","De memoria","Según el precio del proveedor","No saber cuánto stock tiene
+Productos que no se venden
+Cambios en el precio del proveedor","Dueño + familiares",Dueño/jefe,Cuaderno/papel,"No lo registra","Fecha de vencimiento","Control de stock
+Alertas de productos próximos a vencer",Simplicidad,"Es complicada",Sí
