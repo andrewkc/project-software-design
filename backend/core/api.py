@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import InventoryMovement, Lot, Offer, OfferLimit, Order, Product, Store, User
-from . import chat, commerce, services
+from . import chat, commerce, pricing_service, services
 
 
 def user_payload(user):
@@ -297,4 +297,46 @@ def offer_price(request, offer_id):
     return _execute(lambda: services.change_price(request.user, offer_id, request.data),
                     lambda change: {"id": str(change.id), "old_price": str(change.old_price),
                                     "new_price": str(change.new_price), "offer_id": str(change.offer_id)})
+
+
+def _recommendation_payload(item):
+    return {"id": str(item.id), "run_id": str(item.run_id),
+            "offer_id": str(item.offer_id), "product_name": item.offer.lot.product.name,
+            "lot_code": item.offer.lot.code,
+            "state": item.state, "current_price": str(item.current_price),
+            "proposed_price": str(item.proposed_price),
+            "reason": item.predictions.get("reason"),
+            "current_coverage": item.predictions.get("current_coverage"),
+            "proposed_coverage": item.predictions.get("proposed_coverage"),
+            "history_source": item.snapshot.get("history_source"),
+            "explanation": item.explanation,
+            "model_state": item.run.model.state if item.run.model else None}
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def store_recommendations(request):
+    return _execute(lambda: pricing_service.list_recommendations(request.user),
+                    lambda items: [_recommendation_payload(item) for item in items])
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def store_analysis(request):
+    def analyze():
+        run = pricing_service.analyze_store(
+            request.user, demo_history=request.data.get("demo_history", False))
+        return {"id": str(run.id), "state": run.state,
+                "recommendations": [_recommendation_payload(item) for item in
+                                    pricing_service.list_recommendations(request.user)
+                                    if item.run_id == run.id]}
+    return _execute(analyze)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def recommendation_decision(request, recommendation_id):
+    return _execute(lambda: pricing_service.decide(request.user, recommendation_id,
+                                                  request.data.get("decision")),
+                    _recommendation_payload)
 

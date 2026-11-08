@@ -22,6 +22,7 @@ function mockSession(user) {
     if (path === "/store/lots") return [user.role === "OWNER" ? lot : (({ total_cost, ...publicLot }) => publicLot)(lot)];
     if (path === "/store/offers") return [user.role === "OWNER" ? offer : (({ limit, ...publicOffer }) => publicOffer)(offer)];
     if (path === "/store/movements") return [];
+    if (path === "/store/recommendations") return [];
     throw new Error(`Unexpected ${path}`);
   });
   apiPost.mockResolvedValue({ id: "saved" });
@@ -80,4 +81,44 @@ test("owner limit form sends explicit false when below-cost box is unchecked", a
   await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/store/offers/f1/limits", expect.objectContaining({
     below_cost_authorized: false, max_discount_pct: "30", minimum_price: "7",
   })));
+});
+
+test("owner can request a price analysis", async () => {
+  mockSession(owner);
+  render(<StorePanel onExit={() => {}} />);
+  fireEvent.click(await screen.findByText("Analizar ofertas"));
+  await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/store/analysis", {}));
+});
+
+test("owner must explicitly choose simulated history for the demo", async () => {
+  mockSession(owner);
+  render(<StorePanel onExit={() => {}} />);
+  fireEvent.click(await screen.findByText("Analizar con historial simulado (solo demo)"));
+  await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/store/analysis", { demo_history: true }));
+});
+
+test("owner can approve a pending recommendation", async () => {
+  mockSession(owner);
+  apiGet.mockImplementation(async (path) => {
+    if (path === "/store/recommendations") return [{ id: "r1", offer_id: "f1", product_name: "Almendras",
+      lot_code: "ALM-01", state: "PENDING", current_price: "9.00", proposed_price: "8.50",
+      reason: "TARGET_COVERAGE", current_coverage: .6, proposed_coverage: .9 }];
+    if (path === "/auth/me") return owner;
+    if (path === "/store/products") return [product];
+    if (path === "/store/lots") return [lot];
+    if (path === "/store/offers") return [offer];
+    if (path === "/store/movements") return [];
+    throw new Error(`Unexpected ${path}`);
+  });
+  render(<StorePanel onExit={() => {}} />);
+  fireEvent.click(await screen.findByText("Aprobar precio"));
+  await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/store/recommendations/r1/decision", { decision: "APPROVE" }));
+});
+
+test("employee cannot see or invoke price analysis", async () => {
+  mockSession(employee);
+  render(<StorePanel onExit={() => {}} />);
+  await screen.findByText("Venta presencial");
+  expect(screen.queryByText("Analizar ofertas")).toBeNull();
+  expect(apiGet).not.toHaveBeenCalledWith("/store/recommendations");
 });

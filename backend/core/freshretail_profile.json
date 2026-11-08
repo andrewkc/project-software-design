@@ -1,0 +1,44 @@
+{
+  "discount_bucket_counts": [
+    2353300,
+    328724,
+    480490,
+    445151,
+    401742,
+    474520
+  ],
+  "discount_bucket_pct": [
+    0,
+    5,
+    10,
+    15,
+    20,
+    30
+  ],
+  "discount_invalid_rows": 16073,
+  "discount_valid_rows": 4483927,
+  "first_date": "2024-03-28",
+  "interpretation": {
+    "discount_buckets": "observed frequencies, not causal price elasticity",
+    "missing": [
+      "lot expiry",
+      "unit cost",
+      "absolute price",
+      "uncensored demand"
+    ],
+    "stockouts": "real descriptive benchmark; not forced into synthetic inventory",
+    "weekend_ratio": "observed association among fully stocked, undiscounted days; events may remain"
+  },
+  "last_date": "2024-06-25",
+  "products": 865,
+  "rows": 4500000,
+  "schema_version": 1,
+  "source": "Dingdong-Inc/FreshRetailNet-50K",
+  "source_sha256": "6706832db892bbae4969c19d87e07975d2543d2ba7d7d4756360654785de5a3d",
+  "source_split": "train",
+  "stockout_day_fraction": 0.442668,
+  "stockout_open_hour_fraction": 0.198771,
+  "stores": 898,
+  "weekend_comparable_series": 34095,
+  "weekend_weekday_sales_ratio": 1.247706
+}
