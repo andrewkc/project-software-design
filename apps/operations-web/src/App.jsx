@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import bodeSmartLogo from "./assets/BodeSmart-Logo.png";
+import bodeSmartMobileLogo from "./assets/BodeSmart-Mobile-Logo.png";
 
 const starterProducts = [
   { id: 1, name: "Leche Gloria entera", category: "LÃ¡cteos", icon: "ðŸ¥›", stock: 8, unit: "unid.", price: 4.5, expires: "2026-10-20" },
@@ -184,12 +185,12 @@ function App() {
         </section>
         <section className="signup-panel">
           <div className="signup-form-wrap">
-            <div className="mobile-brand"><a className="brand" href="#" onClick={(event) => event.preventDefault()}><img className="brand-logo" src={bodeSmartLogo} alt="BodeSmart" /></a></div>
+            <div className="mobile-brand"><a className="brand" href="#" onClick={(event) => event.preventDefault()}><img className="brand-logo" src={bodeSmartMobileLogo} alt="BodeSmart" /></a></div>
             {authMode === "login" ? null : <div className="step-indicator"><span className="step-current" /><span /><span /></div>}
             {/* <p className="form-kicker">EMPECEMOS POR LO BÃSICO</p> */}
             {authMode === "login" ? (
               <>
-                <h2>Iniciar sesi&oacute;n en BodeSmart</h2>
+                <h2>Iniciar sesión</h2>
                 <form className="signup-form auth-form" onSubmit={finishLogin}>
                   <label className="auth-field" htmlFor="login-email">
                     <span>Correo electr&oacute;nico</span>
@@ -207,7 +208,7 @@ function App() {
               </>
             ) : (
             <>
-            <h2>Crea tu cuenta</h2>
+            <h2>Crear cuenta</h2>
             {/* <p className="form-intro">AsÃ­ podremos preparar el espacio de tu negocio.</p> */}
             <form className="signup-form" onSubmit={finishSignup}>
               <label>¿Cómo te llamas?<input name="name" type="text" placeholder="Nombre completo" autoComplete="name" required /></label>

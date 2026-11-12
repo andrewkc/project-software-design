@@ -25,7 +25,7 @@ a { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #9bc9a3; outline-offset: 2px; }
 
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 800 19px "Manrope", sans-serif; letter-spacing: -1px; }
-.brand-logo { display: block; width: 256px; height: auto; padding: 5px 8px; border-radius: 12px; background: #315d43; object-fit: contain; }
+.brand-logo { display: block; width: 256px; height: auto; object-fit: contain; }
 .brand-mark { width: 35px; height: 35px; border-radius: 12px; display: grid; place-items: center; color: #fff; background: #3b7854; }
 .brand-accent { color: #77a781; }
 .signup-shell { min-height: 100vh; display: grid; grid-template-columns: minmax(380px, 0.9fr) minmax(520px, 1.1fr); background: #fff; }
