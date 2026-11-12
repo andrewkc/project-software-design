@@ -1,4 +1,4 @@
-# Bodega Clara — prototipo frontend
+# BodegaSmart - prototipo frontend
 
 Prototipo adaptable a escritorio y móvil para la gestión interna de una bodega. Incluye un flujo de creación de cuenta, panel principal, catálogo local de productos, alertas de vencimiento, hallazgos de entrevistas y cuatro maneras de iniciar el registro de mercadería.
 
