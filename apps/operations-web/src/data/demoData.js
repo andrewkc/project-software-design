@@ -15,6 +15,7 @@ export const productMethods = [
 export const navigation = [
   { id: "home", label: "Inicio", icon: "home" },
   { id: "inventory", label: "Inventario", icon: "box" },
+  { id: "register", label: "Registrar", icon: "plus" },
   { id: "alerts", label: "Vencimientos", icon: "calendar" },
   { id: "insights", label: "Ideas para tu negocio", icon: "sparkles" },
 ];

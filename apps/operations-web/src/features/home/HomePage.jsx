@@ -1,9 +1,10 @@
-import React from "react";
+﻿import React from "react";
 import { Icon } from "../../components/Icon";
 import { EmptyState } from "../../components/common/InventoryRows";
+import { PageDate } from "../../components/layout/PageDate";
 
 export function HomePage({ user, products, expiringProducts, stockTotal, stockSeries, categoryTotals, maxCategoryTotal, onRegister, onNavigate }) {
-  return <div className="page-content"><section className="welcome-row"><div><h1>&iexcl;Hola, {user?.name?.split(" ")[0] || "Mar&iacute;a"}!</h1><p className="welcome-subtitle">Un vistazo r&aacute;pido a c&oacute;mo va tu <strong>{user?.store || "tu bodega"}</strong> hoy.</p></div>
+  return <div className="page-content"><section className="welcome-row"><div><h1>&iexcl;Hola, {user?.name?.split(" ")[0] || "Mar&iacute;a"}!</h1><p className="welcome-subtitle">Un vistazo r&aacute;pido a c&oacute;mo va tu <strong>{user?.store || "tu bodega"}</strong> hoy.</p></div><PageDate onNotifications={() => onNavigate("alerts")} notificationCount={expiringProducts.length} />
   {/* <button type="button" className="button button-primary add-top-button" onClick={onRegister}><Icon name="plus" size={18} /> Registrar mercader&iacute;a</button> */}
   </section>
     <SummaryCards productCount={products.length} stockTotal={stockTotal} expiringCount={expiringProducts.length} onNavigate={onNavigate} />
@@ -26,9 +27,9 @@ function StockChart({ stockSeries }) {
 }
 
 function CategoryCard({ categoryTotals, maxCategoryTotal }) {
-  return <article className="content-card category-card"><div className="home-card-heading"><div><span className="section-kicker">DISTRIBUCI&Oacute;N</span><h2>Unidades por categor&iacute;a</h2></div></div><div className="category-list">{categoryTotals.map(([category, total]) => <div className="category-row" key={category}><div><span>{category}</span><strong>{total}</strong></div><span className="category-track"><i style={{ width: `${(total / maxCategoryTotal) * 100}%` }} /></span></div>)}</div></article>;
+  return <article className="content-card category-card"><div className="home-card-heading"><div><h2>Unidades por categor&iacute;a</h2></div></div><div className="category-list">{categoryTotals.map(([category, total]) => <div className="category-row" key={category}><div><span>{category}</span><strong>{total}</strong></div><span className="category-track"><i style={{ width: `${(total / maxCategoryTotal) * 100}%` }} /></span></div>)}</div></article>;
 }
 
 function AttentionCard({ expiringProducts, onNavigate }) {
-  return <article className="content-card attention-card"><div className="home-card-heading"><div><span className="section-kicker">ATENCI&Oacute;N</span><h2>Productos para revisar</h2></div><button type="button" className="text-link" onClick={() => onNavigate("alerts")}>Ver todo <Icon name="arrow" size={15} /></button></div>{expiringProducts.length ? <div className="attention-list">{expiringProducts.slice(0, 3).map((product) => <div className="attention-row" key={product.id}><span className="attention-dot" /><span>{product.name}</span><strong>{product.stock} {product.unit}</strong></div>)}</div> : <EmptyState icon="check" title="Todo bajo control" text="No tienes productos pr&oacute;ximos a vencer." />}</article>;
+  return <article className="content-card attention-card"><div className="home-card-heading"><div><h2>Productos para revisar</h2></div><button type="button" className="text-link" onClick={() => onNavigate("alerts")}>Ver todo <Icon name="arrow" size={15} /></button></div>{expiringProducts.length ? <div className="attention-list">{expiringProducts.slice(0, 3).map((product) => <div className="attention-row" key={product.id}><span className="attention-dot" /><span>{product.name}</span><strong>{product.stock} {product.unit}</strong></div>)}</div> : <EmptyState icon="check" title="Todo bajo control" text="No tienes productos pr&oacute;ximos a vencer." />}</article>;
 }
