@@ -115,6 +115,7 @@ def test_create_owner_without_store_rejected(admin):
 def test_create_second_active_owner_rejected(admin, owner, store):
     response = post_json(client_for(admin), "/api/v1/admin/users", new_owner_data(store))
     assert response.status_code in (409, 422)
+    assert "jefe activo" in response.json()["error"]["message"]
     assert User.objects.filter(role="OWNER", store=store).count() == 1
 
 
