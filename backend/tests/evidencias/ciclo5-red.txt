@@ -1,0 +1,3 @@
+﻿Error: Failed to resolve import "./AdminPanel" from "src/AdminPanel.test.jsx". Does the file exist?
+ Test Files  1 failed (1)
+      Tests  no tests
