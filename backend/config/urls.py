@@ -13,6 +13,8 @@ urlpatterns = [
     path("api/v1/auth/logout", api.logout),
     path("api/v1/auth/me", api.me),
     path("api/v1/stores", api.stores),
+    path("api/v1/admin/users", api.admin_users),
+    path("api/v1/admin/stores", api.admin_stores),
     path("api/v1/offers", api.public_offers),
     path("api/v1/offers/<uuid:offer_id>", api.public_offer),
     path("api/v1/orders", api.orders),

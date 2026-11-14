@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import InventoryMovement, Lot, Offer, OfferLimit, Order, Product, Store, User
-from . import chat, commerce, payments, pricing_service, services
+from . import accounts, chat, commerce, payments, pricing_service, services
 
 
 def user_payload(user):
@@ -169,6 +169,20 @@ def verify_payment(request, order_id):
 @csrf_protect
 def local_chat(request):
     return _execute(lambda: chat.answer(request.user, request.data.get("question")))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_users(request):
+    return _execute(lambda: accounts.list_accounts(request.user),
+                    lambda users: [accounts.account_payload(user) for user in users])
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_stores(request):
+    return _execute(lambda: accounts.list_stores(request.user),
+                    lambda items: [{"id": str(store.id), "name": store.name, "active": store.active} for store in items])
 
 
 def _execute(action, serialize=lambda result: result, success=200):
