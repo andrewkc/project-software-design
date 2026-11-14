@@ -151,11 +151,19 @@ def _set_password(user, password):
     user.set_password(password)
 
 
+CONSTRAINT_MESSAGES = {
+    "one_active_owner_per_store": "Esa bodega ya tiene un jefe activo; desactívalo o cámbialo de rol primero",
+    "user_email_ci_unique": "Ya existe una cuenta con ese correo",
+}
+
+
 def _save(user):
     try:
         user.full_clean()
     except ValidationError as error:
-        raise DomainError("INVALID_DATA", "; ".join(error.messages)) from error
+        messages = [next((text for name, text in CONSTRAINT_MESSAGES.items() if name in message), message)
+                    for message in error.messages]
+        raise DomainError("INVALID_DATA", "; ".join(dict.fromkeys(messages))) from error
     user.save()
 
 
