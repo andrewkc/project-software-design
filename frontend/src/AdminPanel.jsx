@@ -20,17 +20,17 @@ function FilterValue({ field, filter, index, onChange }) {
   const label = `Valor del filtro ${index + 1}`;
   if (operatorOf(field.type, filter.operator)?.unary) return null;
   if (field.type === "select") {
-    return <select aria-label={label} value={filter.value} onChange={(event) => onChange(event.target.value)}>
+    return <select className="adm-rule-value" aria-label={label} value={filter.value} onChange={(event) => onChange(event.target.value)}>
       <option value="">Elegir…</option>
       {Object.entries(ROLE_LABELS).map(([id, text]) => <option key={id} value={id}>{text}</option>)}
     </select>;
   }
   if (field.type === "boolean") {
-    return <select aria-label={label} value={filter.value} onChange={(event) => onChange(event.target.value)}>
+    return <select className="adm-rule-value" aria-label={label} value={filter.value} onChange={(event) => onChange(event.target.value)}>
       <option value="">Elegir…</option><option value="true">Activo</option><option value="false">Inactivo</option>
     </select>;
   }
-  return <input aria-label={label} type={field.type === "date" ? "date" : "text"} value={filter.value} placeholder="Valor"
+  return <input className="adm-rule-value" aria-label={label} type={field.type === "date" ? "date" : "text"} value={filter.value} placeholder="Valor"
     onChange={(event) => onChange(event.target.value)} />;
 }
 
@@ -73,8 +73,12 @@ function SortRules({ sorts, setSorts }) {
   </div>;
 }
 
-function ProfilePanel({ profile, stores, isSelf, onClose, onSave, onDelete, onDeactivate }) {
+function ProfilePanel({ profile, stores, profiles, isSelf, onClose, onSave, onDelete, onDeactivate }) {
   const creating = !profile.id;
+  // Stores whose single active owner is someone else; picking one for a new owner would be rejected.
+  const ownedStores = new Set(profiles.filter((item) => item.role === "OWNER" && item.is_active && item.id !== profile.id)
+    .map((item) => item.store_id));
+  const defaultStore = profile.store_id || (stores.find((store) => store.active && !ownedStores.has(store.id)) || stores[0])?.id;
   const [role, setRole] = useState(profile.role);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -127,12 +131,13 @@ function ProfilePanel({ profile, stores, isSelf, onClose, onSave, onDelete, onDe
         <label>Rol<select name="role" value={role} disabled={isSelf} onChange={(event) => setRole(event.target.value)}>
           {Object.entries(ROLE_LABELS).map(([id, text]) => <option key={id} value={id}>{text}</option>)}
         </select></label>
-        {STAFF_ROLES.includes(role) && <label>Bodega<select name="store_id" defaultValue={profile.store_id || stores[0]?.id} required>
-          {stores.map((store) => <option key={store.id} value={store.id}>{store.name}{store.active ? "" : " (inactiva)"}</option>)}
+        {STAFF_ROLES.includes(role) && <label>Bodega<select name="store_id" defaultValue={defaultStore} required>
+          {stores.map((store) => <option key={store.id} value={store.id}>{store.name}{store.active ? "" : " (inactiva)"}
+            {role === "OWNER" && ownedStores.has(store.id) ? " (ya tiene jefe)" : ""}</option>)}
         </select></label>}
         {creating
           ? <label>Contraseña<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
-          : <label>Nueva contraseña <small>(opcional)</small><input name="password" type="password" minLength={8} autoComplete="new-password" /></label>}
+          : <label><span>Nueva contraseña <small>(opcional)</small></span><input name="password" type="password" minLength={8} autoComplete="new-password" /></label>}
         {!creating && <label className="adm-check"><input name="is_active" type="checkbox" defaultChecked={profile.is_active} disabled={isSelf} /> Cuenta activa</label>}
         {isSelf && <p className="adm-hint">Es tu propia cuenta: no puedes cambiar tu rol, desactivarla ni eliminarla.</p>}
         {error && <div className="adm-error" role="alert">
@@ -230,7 +235,7 @@ export default function AdminPanel({ onExit }) {
     <header className="adm-header">
       <div className="adm-brand"><strong>Bode<span>Smart</span></strong><span>Administración</span></div>
       <div className="adm-header-actions">
-        {user && <span>{user.name} · {admin ? "Administrador" : ROLE_LABELS[user.role] || user.role}</span>}
+        {user && <span className="adm-who">{user.name} · {admin ? "Administrador" : ROLE_LABELS[user.role] || user.role}</span>}
         {user && <button type="button" onClick={logout}>Salir de cuenta</button>}
         <button type="button" onClick={onExit}>Volver al inicio</button>
       </div>
@@ -282,11 +287,11 @@ export default function AdminPanel({ onExit }) {
                 </th>;
               })}</tr></thead>
               <tbody>{rows.map((profile) => <tr key={profile.id} onClick={() => setEditing(profile)}>
-                <td className="adm-name-cell">
+                <td><div className="adm-name-cell">
                   <button type="button" className="adm-row-open" data-initial={profile.name.charAt(0).toUpperCase()}
                     onClick={(event) => { event.stopPropagation(); setEditing(profile); }}>{profile.name}</button>
                   {profile.id === user.id && <span className="adm-you">tú</span>}
-                </td>
+                </div></td>
                 <td>{profile.email}</td>
                 <td><span className={`adm-pill adm-role-${profile.role.toLowerCase()}`}>{ROLE_LABELS[profile.role]}</span></td>
                 <td>{profile.store_name || "—"}</td>
@@ -302,7 +307,7 @@ export default function AdminPanel({ onExit }) {
       </>}
       {message && <p className="adm-toast" role="status">{message}</p>}
     </main>
-    {editing && <ProfilePanel key={editing.id || "new"} profile={editing} stores={stores} isSelf={editing.id === user?.id}
+    {editing && <ProfilePanel key={editing.id || "new"} profile={editing} stores={stores} profiles={loaded} isSelf={editing.id === user?.id}
       onClose={closePanel} onSave={save} onDelete={remove} onDeactivate={deactivate} />}
   </div>;
 }

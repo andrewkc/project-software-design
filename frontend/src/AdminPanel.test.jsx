@@ -164,3 +164,11 @@ test("the signed-in admin cannot delete their own profile", async () => {
   const dialog = screen.getByRole("dialog", { name: "Editar perfil" });
   expect(within(dialog).queryByRole("button", { name: "Eliminar" })).toBeNull();
 });
+
+test("new owners default to a store without an active owner", async () => {
+  await renderAdmin();
+  fireEvent.click(screen.getByRole("button", { name: /Nuevo perfil/ }));
+  const store = within(screen.getByRole("dialog", { name: "Nuevo perfil" })).getByLabelText("Bodega");
+  expect(store.value).toBe("s1");
+  expect(within(store).getByRole("option", { name: /Dulce y Fresco.*ya tiene jefe/ })).toBeTruthy();
+});
