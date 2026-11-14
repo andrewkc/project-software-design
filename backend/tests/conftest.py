@@ -30,6 +30,11 @@ def employee(store):
 
 
 @pytest.fixture
+def admin(db):
+    return User.objects.create_user(email="admin@example.test", password="SecurePass123!", name="Admin", role=User.Role.ADMIN, is_staff=True)
+
+
+@pytest.fixture
 def customer(db):
     return User.objects.create_user(email="customer@example.test", password="SecurePass123!", name="Cliente", role=User.Role.CUSTOMER)
 

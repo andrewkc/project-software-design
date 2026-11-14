@@ -1,0 +1,9 @@
+﻿FAILED backend/tests/test_admin_accounts_api.py::test_users_list_requires_login
+FAILED backend/tests/test_admin_accounts_api.py::test_users_list_forbidden_for_non_admin[owner]
+FAILED backend/tests/test_admin_accounts_api.py::test_users_list_forbidden_for_non_admin[employee]
+FAILED backend/tests/test_admin_accounts_api.py::test_users_list_forbidden_for_non_admin[customer]
+FAILED backend/tests/test_admin_accounts_api.py::test_inactive_admin_cannot_list
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_lists_every_profile_with_store
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_lists_stores_including_inactive
+FAILED backend/tests/test_admin_accounts_api.py::test_stores_admin_list_forbidden_for_owner
+8 failed, 1 passed in 14.99s
