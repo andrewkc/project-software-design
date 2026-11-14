@@ -171,11 +171,19 @@ def local_chat(request):
     return _execute(lambda: chat.answer(request.user, request.data.get("question")))
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def admin_users(request):
+    if request.method == "POST":
+        return _execute(lambda: accounts.create_account(request.user, request.data), accounts.account_payload, 201)
     return _execute(lambda: accounts.list_accounts(request.user),
                     lambda users: [accounts.account_payload(user) for user in users])
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def admin_user_detail(request, user_id):
+    return _execute(lambda: accounts.update_account(request.user, user_id, request.data), accounts.account_payload)
 
 
 @api_view(["GET"])

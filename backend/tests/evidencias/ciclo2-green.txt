@@ -1,0 +1,1 @@
+﻿32 passed (ciclo 2 GREEN)
