@@ -59,7 +59,7 @@ def create_account(actor, data):
     _set_password(user, data.get("password"))
     with transaction.atomic():
         _save(user)
-        _audit(actor, "USER_CREATED", user, None)
+        _audit(actor, "USER_CREATED", user.id, None, _snapshot(user))
     return user
 
 
@@ -89,7 +89,7 @@ def update_account(actor, user_id, data):
         if "password" in data:
             _set_password(user, data["password"])
         _save(user)
-        _audit(actor, "USER_UPDATED", user, before)
+        _audit(actor, "USER_UPDATED", user.id, before, _snapshot(user))
     return user
 
 
@@ -107,8 +107,7 @@ def delete_account(actor, user_id):
             user.delete()
         except (ProtectedError, RestrictedError) as error:
             raise DomainError("HAS_HISTORY", "La cuenta tiene historial (pedidos, movimientos o auditoría); desactívala en lugar de eliminarla", 409) from error
-        AuditEvent.objects.create(actor=actor, action="USER_DELETED", entity="User", entity_id=user_id,
-                                  before=before, after=None, correlation_id=uuid.uuid4())
+        _audit(actor, "USER_DELETED", user_id, before, None)
 
 
 def _email(value):
@@ -165,6 +164,6 @@ def _snapshot(user):
             "store_id": str(user.store_id) if user.store_id else None, "is_active": user.is_active}
 
 
-def _audit(actor, action, user, before):
-    AuditEvent.objects.create(actor=actor, action=action, entity="User", entity_id=user.id,
-                              before=before, after=_snapshot(user), correlation_id=uuid.uuid4())
+def _audit(actor, action, user_id, before, after):
+    AuditEvent.objects.create(actor=actor, action=action, entity="User", entity_id=user_id,
+                              before=before, after=after, correlation_id=uuid.uuid4())
