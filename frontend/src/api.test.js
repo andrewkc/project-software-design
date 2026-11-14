@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { apiPost, getApiHealth, getStores } from "./api.js";
+import { apiDelete, apiPatch, apiPost, getApiHealth, getStores } from "./api.js";
 
 test("health calls same-origin Python API", async () => {
   const calls = [];
@@ -47,3 +47,30 @@ test("POST surfaces backend validation message", async () => {
   await assert.rejects(apiPost("/store/local-sales", {}, fetcher), /Sin stock/);
 });
 
+
+function csrfThen(response, calls = []) {
+  return async (path, options) => {
+    calls.push([path, options]);
+    return path.endsWith("/csrf") ? { ok: true, json: async () => ({ csrf_token: "safe-token" }) } : response;
+  };
+}
+
+test("PATCH sends method, CSRF and JSON body", async () => {
+  const calls = [];
+  const fetcher = csrfThen({ ok: true, status: 200, json: async () => ({ id: "u1", name: "Nuevo" }) }, calls);
+  assert.deepEqual(await apiPatch("/admin/users/u1", { name: "Nuevo" }, fetcher), { id: "u1", name: "Nuevo" });
+  assert.equal(calls[1][1].method, "PATCH");
+  assert.equal(calls[1][1].headers["X-CSRFToken"], "safe-token");
+  assert.equal(JSON.parse(calls[1][1].body).name, "Nuevo");
+});
+
+test("DELETE with 204 resolves to null", async () => {
+  const calls = [];
+  assert.equal(await apiDelete("/admin/users/u1", csrfThen({ ok: true, status: 204 }, calls)), null);
+  assert.equal(calls[1][1].method, "DELETE");
+});
+
+test("errors keep the backend code for the UI", async () => {
+  const fetcher = csrfThen({ ok: false, status: 409, json: async () => ({ error: { code: "HAS_HISTORY", message: "Tiene historial" } }) });
+  await assert.rejects(apiDelete("/admin/users/u1", fetcher), (error) => error.code === "HAS_HISTORY" && error.status === 409 && /historial/.test(error.message));
+});

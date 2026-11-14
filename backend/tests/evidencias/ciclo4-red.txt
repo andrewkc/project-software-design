@@ -1,0 +1,9 @@
+﻿# Error [ERR_MODULE_NOT_FOUND]: Cannot find module 'C:\\Users\\alexd\\Desktop\\SOFT\\project-software-design\\frontend\\src\\adminTable.js' imported from C:\\Users\\alexd\\Desktop\\SOFT\\project-software-design\\frontend\\src\\adminTable.test.js
+not ok 1 - src\\adminTable.test.js
+  error: 'test failed'
+# SyntaxError: The requested module './api.js' does not provide an export named 'apiDelete'
+not ok 2 - src\\api.test.js
+  error: 'test failed'
+# tests 2
+# pass 0
+# fail 2
