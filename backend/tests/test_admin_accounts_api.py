@@ -213,3 +213,49 @@ def test_demoting_superuser_admin_clears_platform_flags(admin):
     assert response.status_code == 200
     other.refresh_from_db()
     assert not other.is_superuser and not other.is_staff
+
+
+# --- Eliminar --------------------------------------------------------------
+
+
+def test_admin_deletes_account_without_history(admin, customer):
+    response = client_for(admin).delete(f"/api/v1/admin/users/{customer.id}")
+    assert response.status_code == 204
+    assert not User.objects.filter(id=customer.id).exists()
+
+
+def test_delete_is_audited(admin, customer):
+    client_for(admin).delete(f"/api/v1/admin/users/{customer.id}")
+    event = AuditEvent.objects.get(action="USER_DELETED", entity_id=customer.id)
+    assert event.actor == admin and event.before["email"] == customer.email and event.after is None
+
+
+def test_delete_with_history_is_refused_and_keeps_account(admin, customer, order):
+    response = client_for(admin).delete(f"/api/v1/admin/users/{customer.id}")
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "HAS_HISTORY"
+    assert User.objects.filter(id=customer.id, is_active=True).exists()
+    assert not AuditEvent.objects.filter(action="USER_DELETED").exists()
+
+
+def test_admin_cannot_delete_self(admin):
+    response = client_for(admin).delete(f"/api/v1/admin/users/{admin.id}")
+    assert response.status_code == 422
+    assert User.objects.filter(id=admin.id).exists()
+
+
+def test_delete_unknown_user_is_404(admin):
+    response = client_for(admin).delete("/api/v1/admin/users/00000000-0000-0000-0000-000000000000")
+    assert response.status_code == 404
+
+
+def test_delete_forbidden_for_owner(owner, employee):
+    assert client_for(owner).delete(f"/api/v1/admin/users/{employee.id}").status_code == 403
+    assert User.objects.filter(id=employee.id).exists()
+
+
+def test_delete_requires_csrf(admin, customer):
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(admin)
+    assert client.delete(f"/api/v1/admin/users/{customer.id}").status_code == 403
+    assert User.objects.filter(id=customer.id).exists()

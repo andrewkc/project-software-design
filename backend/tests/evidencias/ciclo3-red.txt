@@ -1,0 +1,7 @@
+﻿FAILED backend/tests/test_admin_accounts_api.py::test_admin_deletes_account_without_history
+FAILED backend/tests/test_admin_accounts_api.py::test_delete_is_audited - cor...
+FAILED backend/tests/test_admin_accounts_api.py::test_delete_with_history_is_refused_and_keeps_account
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_cannot_delete_self
+FAILED backend/tests/test_admin_accounts_api.py::test_delete_unknown_user_is_404
+FAILED backend/tests/test_admin_accounts_api.py::test_delete_forbidden_for_owner
+6 failed, 33 passed in 50.35s
