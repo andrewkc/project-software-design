@@ -59,6 +59,20 @@ Las pruebas de Python usan PostgreSQL real, no SQLite. Para una base distinta, c
 
 La API expone sesión y registro de compradores (`/api/v1/auth/*`), tiendas, ofertas públicas (`/api/v1/offers`), pedidos (`/api/v1/orders`), pago local o Checkout Pro de prueba (`/api/v1/orders/{id}/checkout`, `/api/v1/orders/{id}/verify-payment`) y asistente local de solo lectura (`/api/v1/chat`). Las rutas `/api/v1/store/*` permiten gestionar inventario y ofertas. Solo el dueño puede ingresar stock, ajustar y modificar ofertas; el empleado registra ventas y consulta sin ver costos. Login y demás escrituras requieren CSRF; los datos de sesión se mantienen en cookie HttpOnly. Pedidos y movimientos usan claves de idempotencia y bloqueos de PostgreSQL. Un pedido reserva por hasta 10 minutos; una aprobación local consume la reserva y descuenta inventario una sola vez; rechazo o vencimiento la libera. La aprobación de Mercado Pago se verifica en el servidor con referencia, importe, moneda, cuenta y aplicación antes de descontar inventario. El origen local de React está autorizado para CSRF solo en desarrollo. Un pago acreditado tras vencer la reserva pasa a revisión sin descontar stock.
 
+## Perfil de administrador (CU-01)
+
+En la pantalla inicial, **Administración BodeSmart** abre el panel del administrador de la plataforma (cuenta demo `admin@demo.example`). La vista principal lista los **jefes de bodega** registrados; las pestañas cambian a empleados, clientes, administradores o todos. La tabla funciona como una base de datos de Notion: búsqueda por nombre, correo o bodega; filtros combinables por cualquier columna (contiene, es, está vacío, antes/después de…); orden por una o varias columnas, o con un clic en el encabezado. Al hacer clic en un perfil se abre un panel lateral para editarlo, y **+ Nuevo perfil** crea jefes, empleados, clientes u otros administradores.
+
+| Ruta | Uso |
+| --- | --- |
+| `GET /api/v1/admin/users` | Lista todos los perfiles, sin contraseñas ni datos de ventas o costos. |
+| `POST /api/v1/admin/users` | Crea un perfil. Jefes y empleados requieren bodega; admin y cliente no. |
+| `PATCH /api/v1/admin/users/{id}` | Edita nombre, correo, rol, bodega, estado o contraseña. |
+| `DELETE /api/v1/admin/users/{id}` | Elimina solo cuentas sin historial; si tienen pedidos, movimientos o auditoría responde `409 HAS_HISTORY` y el panel ofrece desactivarlas. |
+| `GET /api/v1/admin/stores` | Bodegas para asignar personal, incluidas las inactivas. |
+
+Solo el rol `ADMIN` accede a estas rutas, y todas las escrituras exigen CSRF. Se mantiene un jefe activo por bodega. El administrador no puede quitarse el rol, desactivarse ni eliminarse a sí mismo, de modo que siempre queda al menos uno activo. Cada alta, cambio o baja queda en `AuditEvent` con el antes y el después, sin contraseñas.
+
 Los documentos de alcance y arquitectura están un nivel arriba, en los dos archivos `definicion de proyecto DESSOF - *.md`.
 
 ## Pago de prueba con Mercado Pago
