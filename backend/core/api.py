@@ -182,7 +182,7 @@ def admin_users(request):
 @permission_classes([IsAuthenticated])
 def admin_stores(request):
     return _execute(lambda: accounts.list_stores(request.user),
-                    lambda items: [{"id": str(store.id), "name": store.name, "active": store.active} for store in items])
+                    lambda items: [accounts.store_payload(store) for store in items])
 
 
 def _execute(action, serialize=lambda result: result, success=200):

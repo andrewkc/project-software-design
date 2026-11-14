@@ -26,6 +26,10 @@ def account_payload(user):
     }
 
 
+def store_payload(store):
+    return {"id": str(store.id), "name": store.name, "active": store.active}
+
+
 def list_accounts(actor):
     require_admin(actor)
     return User.objects.select_related("store").order_by("role", "name", "email")
