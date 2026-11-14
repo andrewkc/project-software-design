@@ -1,0 +1,23 @@
+﻿FAILED backend/tests/test_admin_accounts_api.py::test_admin_creates_owner_for_store
+FAILED backend/tests/test_admin_accounts_api.py::test_create_is_audited_without_password
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_creates_customer_ignoring_store
+FAILED backend/tests/test_admin_accounts_api.py::test_create_owner_without_store_rejected
+FAILED backend/tests/test_admin_accounts_api.py::test_create_second_active_owner_rejected
+FAILED backend/tests/test_admin_accounts_api.py::test_create_rejects_weak_password[]
+FAILED backend/tests/test_admin_accounts_api.py::test_create_rejects_weak_password[123]
+FAILED backend/tests/test_admin_accounts_api.py::test_create_rejects_weak_password[password]
+FAILED backend/tests/test_admin_accounts_api.py::test_create_rejects_duplicate_email
+FAILED backend/tests/test_admin_accounts_api.py::test_create_rejects_unknown_role
+FAILED backend/tests/test_admin_accounts_api.py::test_create_forbidden_for_owner
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_updates_profile_fields
+FAILED backend/tests/test_admin_accounts_api.py::test_update_is_audited_with_before_and_after
+FAILED backend/tests/test_admin_accounts_api.py::test_update_promotes_employee_to_owner_of_free_store
+FAILED backend/tests/test_admin_accounts_api.py::test_update_to_customer_drops_store
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_deactivates_and_reactivates
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_resets_password
+FAILED backend/tests/test_admin_accounts_api.py::test_update_rejects_weak_password
+FAILED backend/tests/test_admin_accounts_api.py::test_update_rejects_duplicate_email
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_cannot_deactivate_or_demote_self
+FAILED backend/tests/test_admin_accounts_api.py::test_admin_can_edit_own_name
+FAILED backend/tests/test_admin_accounts_api.py::test_demoting_superuser_admin_clears_platform_flags
+22 failed, 10 passed in 30.03s
