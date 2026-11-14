@@ -53,7 +53,8 @@ def create_account(actor, data):
     require_admin(actor)
     role = _role(data.get("role"))
     user = User(email=_email(data.get("email")), name=required_text(data.get("name"), "Nombre", 120),
-                role=role, store=_store_for(role, data.get("store_id")), is_staff=role == User.Role.ADMIN)
+                role=role, store=_store_for(role, data.get("store_id")))
+    _apply_platform_flags(user)
     _set_password(user, data.get("password"))
     with transaction.atomic():
         _save(user)
@@ -83,9 +84,7 @@ def update_account(actor, user_id, data):
         # Blocking self-demotion also guarantees at least one active admin remains.
         if user.id == actor.id and (user.role != User.Role.ADMIN or not user.is_active):
             raise DomainError("SELF_LOCKOUT", "No puedes quitarte el rol de administrador ni desactivar tu cuenta")
-        user.is_staff = user.role == User.Role.ADMIN
-        if user.role != User.Role.ADMIN:
-            user.is_superuser = False
+        _apply_platform_flags(user)
         if "password" in data:
             _set_password(user, data["password"])
         _save(user)
@@ -115,6 +114,13 @@ def _store_for(role, store_id):
     if not store:
         raise DomainError("INVALID_STORE", "Bodega no encontrada")
     return store
+
+
+def _apply_platform_flags(user):
+    """Only admins reach Django admin; leaving the role also drops superuser."""
+    user.is_staff = user.role == User.Role.ADMIN
+    if not user.is_staff:
+        user.is_superuser = False
 
 
 def _set_password(user, password):
