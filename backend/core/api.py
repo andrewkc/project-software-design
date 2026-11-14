@@ -180,9 +180,11 @@ def admin_users(request):
                     lambda users: [accounts.account_payload(user) for user in users])
 
 
-@api_view(["PATCH"])
+@api_view(["PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def admin_user_detail(request, user_id):
+    if request.method == "DELETE":
+        return _execute(lambda: accounts.delete_account(request.user, user_id), lambda _: None, 204)
     return _execute(lambda: accounts.update_account(request.user, user_id, request.data), accounts.account_payload)
 
 

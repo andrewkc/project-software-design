@@ -5,6 +5,7 @@ import uuid
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import ProtectedError, RestrictedError
 
 from .models import AuditEvent, Store, User
 from .services import DomainError, required_text
@@ -90,6 +91,24 @@ def update_account(actor, user_id, data):
         _save(user)
         _audit(actor, "USER_UPDATED", user, before)
     return user
+
+
+def delete_account(actor, user_id):
+    """Removes an account only when nothing references it; history means deactivate instead."""
+    require_admin(actor)
+    if str(user_id) == str(actor.id):
+        raise DomainError("SELF_LOCKOUT", "No puedes eliminar tu propia cuenta")
+    with transaction.atomic():
+        user = User.objects.select_for_update().filter(id=user_id).first()
+        if not user:
+            raise DomainError("NOT_FOUND", "Cuenta no encontrada", 404)
+        before = _snapshot(user)
+        try:
+            user.delete()
+        except (ProtectedError, RestrictedError) as error:
+            raise DomainError("HAS_HISTORY", "La cuenta tiene historial (pedidos, movimientos o auditoría); desactívala en lugar de eliminarla", 409) from error
+        AuditEvent.objects.create(actor=actor, action="USER_DELETED", entity="User", entity_id=user_id,
+                                  before=before, after=None, correlation_id=uuid.uuid4())
 
 
 def _email(value):
