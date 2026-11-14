@@ -6,6 +6,7 @@ import uuid
 from datetime import timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -48,12 +49,17 @@ def offer_payload(offer):
 
 
 def order_payload(order):
+    attempt = order.payment_attempts.order_by("-created_at").first()
+    payment_mode = attempt.provider if attempt else ("MERCADOPAGO_TEST" if settings.MERCADOPAGO_ACCESS_TOKEN else "LOCAL_SIMULATION")
     lines = order.lines.select_related("offer__lot__product").order_by("id")
     return {"id": str(order.id), "store_id": str(order.store_id), "store_name": order.store.name,
             "state": order.state, "currency": order.currency, "total": str(order.total),
             "reservation_until": order.reservation_until.isoformat(),
             "paid_at": order.paid_at.isoformat() if order.paid_at else None,
-            "payment_mode": "LOCAL_SIMULATION", "pickup_address": order.store.address,
+            "payment_mode": payment_mode,
+            "payment_started": bool(attempt and attempt.provider == "MERCADOPAGO_TEST" and attempt.response_summary.get("provider_order_id")),
+            "payment_state": attempt.state if attempt else None,
+            "pickup_address": order.store.address,
             "lines": [{"offer_id": str(line.offer_id), "product_name": line.offer.lot.product.name,
                        "base_quantity": line.base_qty, "step": line.step_snapshot,
                        "price_per_step": str(line.step_price_snapshot), "amount": str(line.amount),
@@ -200,6 +206,8 @@ def simulate_payment(actor, order_id, decision):
     if order.reservation_until <= timezone.now():
         _release(order, Order.State.EXPIRED)
         return order
+    if order.payment_attempts.exclude(provider="LOCAL_SIMULATION").exists():
+        raise services.DomainError("PAYMENT_ALREADY_STARTED", "Este pedido usa Mercado Pago", 409)
     attempt = PaymentAttempt.objects.create(order=order, provider="LOCAL_SIMULATION",
                                             state=PaymentAttempt.State.CREATED, amount=order.total,
                                             provider_key=uuid.uuid4())
@@ -208,6 +216,10 @@ def simulate_payment(actor, order_id, decision):
         attempt.state = PaymentAttempt.State.REJECTED
         attempt.save(update_fields=["state", "updated_at"])
         return order
+    return _approve_order(order, attempt)
+
+
+def _approve_order(order, attempt):
     reservations = list(Reservation.objects.select_related("line__offer__lot__product").filter(
         line__order=order, state=Reservation.State.ACTIVE).order_by("lot_id"))
     lots = {lot.id: lot for lot in Lot.objects.select_for_update().filter(
@@ -236,4 +248,35 @@ def simulate_payment(actor, order_id, decision):
     order.save(update_fields=["state", "paid_at", "updated_at"])
     attempt.state, attempt.approved_at = PaymentAttempt.State.APPROVED, order.paid_at
     attempt.save(update_fields=["state", "approved_at", "updated_at"])
+    return order
+
+
+@transaction.atomic
+def approve_external_payment(order_id, attempt_id):
+    order = Order.objects.select_for_update().get(pk=order_id)
+    attempt = PaymentAttempt.objects.select_for_update().get(pk=attempt_id, order=order, provider="MERCADOPAGO_TEST")
+    if order.state in (Order.State.PAID, Order.State.PAYMENT_REVIEW):
+        return order
+    if order.state != Order.State.PENDING or order.reservation_until <= timezone.now():
+        if order.state == Order.State.PENDING:
+            _release(order, Order.State.PAYMENT_REVIEW)
+        else:
+            order.state = Order.State.PAYMENT_REVIEW
+            order.save(update_fields=["state", "updated_at"])
+        attempt.state = PaymentAttempt.State.APPROVED
+        attempt.approved_at = timezone.now()
+        attempt.save(update_fields=["state", "approved_at", "updated_at"])
+        return order
+    return _approve_order(order, attempt)
+
+
+@transaction.atomic
+def reject_external_payment(order_id, attempt_id):
+    order = Order.objects.select_for_update().get(pk=order_id)
+    attempt = PaymentAttempt.objects.select_for_update().get(pk=attempt_id, order=order, provider="MERCADOPAGO_TEST")
+    if order.state == Order.State.PENDING:
+        _release(order, Order.State.FAILED)
+    if order.state in (Order.State.FAILED, Order.State.EXPIRED):
+        attempt.state = PaymentAttempt.State.REJECTED
+        attempt.save(update_fields=["state", "updated_at"])
     return order

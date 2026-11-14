@@ -27,7 +27,7 @@ function mockData(user = null) {
   apiPost.mockResolvedValue(order);
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); });
 afterEach(cleanup);
 
 test("public catalog only shows the selected store and changing store clears basket", async () => {
@@ -65,4 +65,88 @@ test("buyer can ask the local read-only assistant", async () => {
   fireEvent.submit(input.closest("form"));
   await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/chat", { question: "¿Qué ofertas hay?" }));
   expect(await screen.findByText("Almendras disponibles")).toBeTruthy();
+});
+
+
+test("buyer opens checkout with one click and confirmation is automatic", async () => {
+  mockData({ id: "c1", name: "Cliente", role: "CUSTOMER" });
+  const popup = { opener: window, location: { replace: vi.fn() }, close: vi.fn() };
+  vi.spyOn(window, "open").mockReturnValue(popup);
+  apiPost.mockImplementation(async (path) => {
+    if (path === "/orders") return { ...order, payment_mode: "MERCADOPAGO_TEST", payment_started: false };
+    if (path.endsWith("/checkout")) return { checkout_url: "https://www.mercadopago.com.pe/checkout/test" };
+    if (path.endsWith("/verify-payment")) return { ...order, state: "PAID", payment_mode: "MERCADOPAGO_TEST", payment_started: true };
+    throw new Error(path);
+  });
+  render(<BuyerPanel onExit={() => {}} />);
+  await screen.findByText("Almendras");
+  fireEvent.click(screen.getByText("Añadir"));
+  fireEvent.click(screen.getByText("Crear pedido y reservar"));
+  fireEvent.click(await screen.findByText("Pagar con Mercado Pago"));
+  await waitFor(() => expect(popup.location.replace).toHaveBeenCalledWith("https://www.mercadopago.com.pe/checkout/test"));
+  expect(popup.opener).toBeNull();
+  await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/orders/order-1234/verify-payment", {}));
+  expect(await screen.findByText(/Pago de prueba confirmado/)).toBeTruthy();
+  expect(screen.queryByText("Pagar con Mercado Pago")).toBeNull();
+});
+
+test("blocked popup leaves a usable checkout link", async () => {
+  mockData({ id: "c1", name: "Cliente", role: "CUSTOMER" });
+  vi.spyOn(window, "open").mockReturnValue(null);
+  apiPost.mockImplementation(async (path) => {
+    if (path === "/orders") return { ...order, payment_mode: "MERCADOPAGO_TEST", payment_started: false };
+    if (path.endsWith("/checkout")) return { checkout_url: "https://www.mercadopago.com.pe/checkout/test" };
+    if (path.endsWith("/verify-payment")) return { ...order, payment_mode: "MERCADOPAGO_TEST", payment_started: true };
+    throw new Error(path);
+  });
+  render(<BuyerPanel onExit={() => {}} />);
+  await screen.findByText("Almendras");
+  fireEvent.click(screen.getByText("Añadir"));
+  fireEvent.click(screen.getByText("Crear pedido y reservar"));
+  fireEvent.click(await screen.findByText("Pagar con Mercado Pago"));
+  const link = await screen.findByText("Abrir pago de prueba");
+  expect(link.getAttribute("href")).toBe("https://www.mercadopago.com.pe/checkout/test");
+  expect(link.getAttribute("target")).toBe("_blank");
+});
+
+test("pending checkout resumes and verifies after reload", async () => {
+  mockData({ id: "c1", name: "Cliente", role: "CUSTOMER" });
+  apiGet.mockImplementation(async (path) => {
+    if (path === "/stores") return [{ id: "s1", name: "Bodega A", address: "Calle A" }];
+    if (path === "/offers") return [offer];
+    if (path === "/auth/me") return { id: "c1", name: "Cliente", role: "CUSTOMER" };
+    if (path === "/orders") return [{ ...order, payment_mode: "MERCADOPAGO_TEST", payment_started: true }];
+    throw new Error(path);
+  });
+  apiPost.mockResolvedValue({ ...order, state: "PAID", payment_mode: "MERCADOPAGO_TEST", payment_started: true });
+  render(<BuyerPanel onExit={() => {}} />);
+  await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/orders/order-1234/verify-payment", {}));
+  expect(await screen.findByText(/Pago de prueba confirmado/)).toBeTruthy();
+});
+
+test("empty basket cannot create an order", async () => {
+  mockData({ id: "c1", name: "Cliente", role: "CUSTOMER" });
+  render(<BuyerPanel onExit={() => {}} />);
+  await screen.findByText("Almendras");
+  const button = screen.getByText("Crear pedido y reservar");
+  expect(button.disabled).toBe(true);
+  fireEvent.click(button);
+  expect(apiPost).not.toHaveBeenCalledWith("/orders", expect.anything());
+});
+
+test("simultaneous focus events do not duplicate verification", async () => {
+  mockData({ id: "c1", name: "Cliente", role: "CUSTOMER" });
+  apiGet.mockImplementation(async (path) => {
+    if (path === "/stores") return [{ id: "s1", name: "Bodega A", address: "Calle A" }];
+    if (path === "/offers") return [offer];
+    if (path === "/auth/me") return { id: "c1", name: "Cliente", role: "CUSTOMER" };
+    if (path === "/orders") return [{ ...order, payment_mode: "MERCADOPAGO_TEST", payment_started: true }];
+    throw new Error(path);
+  });
+  apiPost.mockImplementation(() => new Promise(() => {}));
+  render(<BuyerPanel onExit={() => {}} />);
+  await waitFor(() => expect(apiPost).toHaveBeenCalledTimes(1));
+  fireEvent.focus(window);
+  fireEvent.focus(window);
+  expect(apiPost).toHaveBeenCalledTimes(1);
 });

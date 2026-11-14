@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import InventoryMovement, Lot, Offer, OfferLimit, Order, Product, Store, User
-from . import chat, commerce, pricing_service, services
+from . import chat, commerce, payments, pricing_service, services
 
 
 def user_payload(user):
@@ -150,6 +150,18 @@ def order_detail(request, order_id):
 def simulated_payment(request, order_id):
     return _execute(lambda: commerce.simulate_payment(request.user, order_id,
                      request.data.get("decision")), commerce.order_payload)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def checkout(request, order_id):
+    return _execute(lambda: payments.begin_checkout(request.user, order_id))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def verify_payment(request, order_id):
+    return _execute(lambda: payments.verify_checkout(request.user, order_id), commerce.order_payload)
 
 
 @api_view(["POST"])

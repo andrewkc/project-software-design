@@ -6,3 +6,4 @@ pytest-django>=4.9,<5
 duckdb>=1.5,<2
 scikit-learn>=1.9,<2
 
+python-dotenv>=1,<2

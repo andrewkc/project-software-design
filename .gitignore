@@ -9,3 +9,5 @@ frontend/dist/
 backend/media/
 *.sqlite3
 
+
+.local-postgres/

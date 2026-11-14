@@ -18,6 +18,8 @@ urlpatterns = [
     path("api/v1/orders", api.orders),
     path("api/v1/orders/<uuid:order_id>", api.order_detail),
     path("api/v1/orders/<uuid:order_id>/simulate-payment", api.simulated_payment),
+    path("api/v1/orders/<uuid:order_id>/checkout", api.checkout),
+    path("api/v1/orders/<uuid:order_id>/verify-payment", api.verify_payment),
     path("api/v1/chat", api.local_chat),
     path("api/v1/store/products", api.store_products),
     path("api/v1/store/lots", api.store_lots),

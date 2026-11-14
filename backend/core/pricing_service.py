@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import uuid
 from collections import defaultdict
 from datetime import datetime, time, timedelta
 from decimal import Decimal
@@ -169,6 +170,7 @@ def analyze_store(actor, demo_history=False):
     ).order_by("-confirmed_at", "-created_at").values_list("id", flat=True).first()
     key = _snapshot_key(actor.store_id, today, offers, policy.version,
                         report["artifact_sha256"], str(last_movement), demo_history)
+    services._lock_idempotency_key(uuid.uuid5(uuid.NAMESPACE_URL, key))
     existing = AnalysisRun.objects.filter(deduplication_key=key).first()
     if existing:
         return existing
