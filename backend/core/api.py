@@ -345,6 +345,20 @@ def store_analysis(request):
     return _execute(analyze)
 
 
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def store_pricing_policy(request):
+    def payload(policy):
+        return {"mode": policy.mode, "version": policy.version,
+                "synthetic_history": policy.mode == "AUTOMATIC",
+                "authorized_by": policy.created_by.name}
+    if request.method == "GET":
+        return _execute(lambda: pricing_service.current_policy(request.user), payload)
+    return _execute(lambda: pricing_service.set_policy_mode(
+        request.user, request.data.get("mode"),
+        request.data.get("confirm_demo_synthetic", False)), payload)
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def recommendation_decision(request, recommendation_id):

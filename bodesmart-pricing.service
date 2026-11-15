@@ -1,0 +1,9 @@
+[Unit]
+Description=BodeSmart daily demo price analysis
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/ec2-user/bodesmart
+ExecStart=/usr/bin/docker compose -f compose.production.yaml exec -T web python manage.py run_auto_pricing

@@ -23,6 +23,7 @@ function mockSession(user) {
     if (path === "/store/offers") return [user.role === "OWNER" ? offer : (({ limit, ...publicOffer }) => publicOffer)(offer)];
     if (path === "/store/movements") return [];
     if (path === "/store/recommendations") return [];
+    if (path === "/store/pricing-policy") return { mode: "REVIEW", version: 1 };
     throw new Error(`Unexpected ${path}`);
   });
   apiPost.mockResolvedValue({ id: "saved" });
@@ -119,6 +120,7 @@ test("owner can approve a pending recommendation", async () => {
     if (path === "/store/lots") return [lot];
     if (path === "/store/offers") return [offer];
     if (path === "/store/movements") return [];
+    if (path === "/store/pricing-policy") return { mode: "REVIEW", version: 1 };
     throw new Error(`Unexpected ${path}`);
   });
   render(<StorePanel onExit={() => {}} />);
@@ -132,4 +134,17 @@ test("employee cannot see or invoke price analysis", async () => {
   await screen.findByText("Venta presencial");
   expect(screen.queryByText("Analizar ofertas")).toBeNull();
   expect(apiGet).not.toHaveBeenCalledWith("/store/recommendations");
+});
+
+test("owner must check consent before enabling automatic demo pricing", async () => {
+  mockSession(owner);
+  render(<StorePanel onExit={() => {}} />);
+  const activate = await screen.findByText("Activar automático");
+  expect(activate.disabled).toBe(true);
+  fireEvent.click(screen.getByText(/Autorizo que esta bodega demo/));
+  expect(activate.disabled).toBe(false);
+  fireEvent.click(activate);
+  await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/store/pricing-policy", {
+    mode: "AUTOMATIC", confirm_demo_synthetic: true,
+  }));
 });

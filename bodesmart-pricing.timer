@@ -1,0 +1,10 @@
+[Unit]
+Description=Run BodeSmart demo price analysis each morning
+
+[Timer]
+OnCalendar=*-*-* 13:00:00 UTC
+Persistent=true
+Unit=bodesmart-pricing.service
+
+[Install]
+WantedBy=timers.target

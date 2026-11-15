@@ -39,6 +39,63 @@ def _load_model():
         raise services.DomainError("MODEL_UNAVAILABLE", "Modelo local no disponible o incompatible", 503) from error
 
 
+def _demo_model_validated(report):
+    """Accept only the matching, reproducible offline demo evaluation."""
+    try:
+        evaluation = json.loads((MODEL_ROOT / "pricing-evaluation.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    scenarios = evaluation.get("scenarios")
+    return (evaluation.get("status") == "OFFLINE_SYNTHETIC_EVALUATION_ONLY" and
+            evaluation.get("model_sha256") == report["artifact_sha256"] and
+            evaluation.get("all_scenarios_safe") is True and
+            evaluation.get("expected_unsold_no_worse") is True and
+            isinstance(scenarios, list) and len(scenarios) >= 6 and
+            {item.get("seed") for item in scenarios if isinstance(item, dict)} == set(range(42, 48)) and
+            all(isinstance(item, dict) and item.get("price_violations") == 0 and
+                item.get("model_expected_unsold_no_worse_than_hold") is True and
+                item.get("scenarios", 0) > 0 for item in scenarios))
+
+
+def current_policy(actor):
+    _owner(actor)
+    policy = StorePricingPolicy.objects.filter(store_id=actor.store_id, ends_at__isnull=True).first()
+    if not policy:
+        raise services.DomainError("POLICY_REQUIRED", "Configura la política de precios", 409)
+    return policy
+
+
+@transaction.atomic
+def set_policy_mode(actor, mode, confirm_demo_synthetic=False):
+    _owner(actor)
+    if mode not in (StorePricingPolicy.Mode.REVIEW, StorePricingPolicy.Mode.AUTOMATIC):
+        raise services.DomainError("INVALID_MODE", "Modo de precios inválido")
+    policy = StorePricingPolicy.objects.select_for_update().filter(
+        store_id=actor.store_id, ends_at__isnull=True).first()
+    if not policy:
+        raise services.DomainError("POLICY_REQUIRED", "Configura la política de precios", 409)
+    if mode == StorePricingPolicy.Mode.AUTOMATIC:
+        if confirm_demo_synthetic is not True:
+            raise services.DomainError("CONFIRMATION_REQUIRED", "Confirma el uso de historial simulado")
+        if not settings.DEMO_ALLOW_SYNTHETIC_HISTORY or actor.store.name not in DEMO_STORES:
+            raise services.DomainError("DEMO_AUTOMATIC_UNAVAILABLE", "Modo automático solo disponible en bodegas demo", 403)
+        _, report = _load_model()
+        if not _demo_model_validated(report):
+            raise services.DomainError("MODEL_NOT_DEMO_VALIDATED", "Falta una evaluación válida del modelo para la demo", 409)
+        offers = Offer.objects.filter(lot__product__store_id=actor.store_id,
+                                      state=Offer.State.PUBLISHED)
+        if any(not OfferLimit.objects.filter(offer=offer, ends_at__isnull=True).exists()
+               for offer in offers):
+            raise services.DomainError("LIMIT_REQUIRED", "Configura límites para todas las ofertas publicadas", 409)
+    if policy.mode == mode:
+        return policy
+    now = timezone.now()
+    policy.ends_at = now
+    policy.save(update_fields=["ends_at", "updated_at"])
+    return StorePricingPolicy.objects.create(store_id=actor.store_id,
+        version=policy.version + 1, mode=mode, starts_at=now, created_by=actor)
+
+
 def _sales_history(product, today, now):
     """Only confirmed sales before the analysis instant; zero-sales days count."""
     start = datetime.combine(today - timedelta(days=14), time.min, LIMA)
@@ -84,11 +141,11 @@ def _first_day_fraction(now, close):
 
 
 def _snapshot_key(store_id, day, offers, policy_version, model_sha, last_movement,
-                  demo_history):
+                  demo_history, origin):
     values = [(str(offer.id), offer.version, str(offer.current_price),
                offer.lot.physical_qty, offer.lot.reserved_qty,
                getattr(offer, "current_limit_version", None)) for offer in offers]
-    payload = [values, policy_version, model_sha, last_movement, demo_history]
+    payload = [values, policy_version, model_sha, last_movement, demo_history, origin]
     digest = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()[:32]
     return f"{store_id}:{day}:{digest}"
 
@@ -143,11 +200,13 @@ def _recommend(offer, limit, bundle, now, demo_history=False):
 
 
 @transaction.atomic
-def analyze_store(actor, demo_history=False):
+def analyze_store(actor, demo_history=False, origin="MANUAL"):
     """Produce idempotent recommendations. All price changes require owner review."""
     _owner(actor)
     if not isinstance(demo_history, bool):
         raise services.DomainError("INVALID_FLAG", "Indica explícitamente si usas historial de demo")
+    if origin not in ("MANUAL", "DAILY"):
+        raise services.DomainError("INVALID_ORIGIN", "Origen de análisis inválido")
     if demo_history and (not settings.DEMO_ALLOW_SYNTHETIC_HISTORY or actor.store.name not in DEMO_STORES):
         raise services.DomainError("DEMO_HISTORY_UNAVAILABLE",
                                    "El historial simulado no está habilitado para esta bodega demo", 403)
@@ -169,22 +228,26 @@ def analyze_store(actor, demo_history=False):
         store_id=actor.store_id, state=InventoryMovement.State.CONFIRMED
     ).order_by("-confirmed_at", "-created_at").values_list("id", flat=True).first()
     key = _snapshot_key(actor.store_id, today, offers, policy.version,
-                        report["artifact_sha256"], str(last_movement), demo_history)
+                        report["artifact_sha256"], str(last_movement), demo_history, origin)
     services._lock_idempotency_key(uuid.uuid5(uuid.NAMESPACE_URL, key))
     existing = AnalysisRun.objects.filter(deduplication_key=key).first()
     if existing:
         return existing
+    model_state = "DEMO_VALIDATED" if _demo_model_validated(report) else "EXPERIMENTAL"
     model, _ = MLModel.objects.get_or_create(
         version=f"demand-{report['artifact_sha256'][:16]}",
         defaults={"artifact_path": str(MODEL_ROOT / report["artifact"]),
-                  "sha256": report["artifact_sha256"], "state": report["state"],
+                  "sha256": report["artifact_sha256"], "state": model_state,
                   "features_version": report["features_version"],
                   "dataset_version": report["dataset_version"],
                   "metrics": report["evaluation"],
                   "configuration": report["model_parameters"],
                   "trained_at": datetime.fromisoformat(report["trained_at_utc"])})
+    if model.state != model_state:
+        model.state = model_state
+        model.save(update_fields=["state", "updated_at"])
     run = AnalysisRun.objects.create(store_id=actor.store_id, model=model,
-                                     origin="MANUAL", state="DONE",
+                                     origin=origin, state="DONE",
                                      target_date=today, deduplication_key=key)
     for offer in offers:
         limit = limits.get(offer.id)
@@ -207,7 +270,8 @@ def analyze_store(actor, demo_history=False):
             snapshot=snapshot, predictions=prediction,
             explanation=(f"{prediction['reason']}: estimación experimental con "
                          f"{'historial simulado' if snapshot['history_source'] == 'synthetic_demo_history' else 'ventas registradas'}; "
-                         "requiere revisión del dueño."),
+                         + ("se aplica solo porque el dueño activó el modo automático de demo." if origin == "DAILY"
+                            else "requiere revisión del dueño.")),
             state=prediction["status"])
     return run
 
@@ -219,10 +283,12 @@ def list_recommendations(actor):
 
 
 @transaction.atomic
-def decide(actor, recommendation_id, decision):
+def decide(actor, recommendation_id, decision, *, automatic=False):
     _owner(actor)
     if decision not in ("APPROVE", "REJECT"):
         raise services.DomainError("INVALID_DECISION", "Decisión inválida")
+    if automatic and decision != "APPROVE":
+        raise services.DomainError("INVALID_DECISION", "La ejecución automática solo aplica propuestas")
     recommendation = Recommendation.objects.select_for_update().filter(
         id=recommendation_id, run__store_id=actor.store_id).first()
     if not recommendation:
@@ -242,6 +308,11 @@ def decide(actor, recommendation_id, decision):
     lot = Lot.objects.select_for_update().get(pk=offer.lot_id)
     policy = StorePricingPolicy.objects.select_for_update().filter(
         store_id=actor.store_id, ends_at__isnull=True).first()
+    if automatic and (not policy or policy.mode != StorePricingPolicy.Mode.AUTOMATIC or
+                      not settings.DEMO_ALLOW_SYNTHETIC_HISTORY or
+                      actor.store.name not in DEMO_STORES or
+                      recommendation.run.model.state != "DEMO_VALIDATED"):
+        raise services.DomainError("DEMO_AUTOMATIC_UNAVAILABLE", "Modo automático no autorizado", 403)
     limit = OfferLimit.objects.select_for_update().filter(
         offer_id=offer.id, ends_at__isnull=True).first()
     stale = (offer.version != recommendation.offer_version or
@@ -260,15 +331,43 @@ def decide(actor, recommendation_id, decision):
     PriceChange.objects.create(
         offer=offer, recommendation=recommendation,
         old_price=offer.current_price, new_price=recommendation.proposed_price,
-        origin="REVIEW", actor=actor,
-        reason="Recomendación experimental aprobada por el dueño",
+        origin="AUTOMATIC" if automatic else "REVIEW", actor=None if automatic else actor,
+        reason=("Descuento automático de demo con " +
+                ("historial simulado" if recommendation.snapshot.get("history_source") == "synthetic_demo_history"
+                 else "ventas registradas")) if automatic else "Recomendación experimental aprobada por el dueño",
         limit_version=limit.version,
         model_version=recommendation.run.model.version)
     offer.current_price = recommendation.proposed_price
     offer.version += 1
     offer.save(update_fields=["current_price", "version", "updated_at"])
     recommendation.state = "APPLIED"
-    recommendation.decided_by = actor
+    recommendation.decided_by = None if automatic else actor
     recommendation.decided_at = timezone.now()
     recommendation.save(update_fields=["state", "decided_by", "decided_at", "updated_at"])
     return recommendation
+
+
+def run_automatic_pricing():
+    """Daily job: only opted-in demo stores and validated demo model."""
+    result = {"stores": 0, "applied": 0, "kept": 0, "stale": 0}
+    policies = StorePricingPolicy.objects.select_related("store", "created_by").filter(
+        mode=StorePricingPolicy.Mode.AUTOMATIC, ends_at__isnull=True)
+    for policy in policies:
+        if not settings.DEMO_ALLOW_SYNTHETIC_HISTORY or policy.store.name not in DEMO_STORES:
+            continue
+        _, report = _load_model()
+        if not _demo_model_validated(report):
+            continue
+        today = timezone.localdate()
+        run = AnalysisRun.objects.filter(store_id=policy.store_id, origin="DAILY",
+                                         target_date=today).order_by("-created_at").first()
+        if not run:
+            run = analyze_store(policy.created_by, demo_history=True, origin="DAILY")
+        result["stores"] += 1
+        for recommendation in Recommendation.objects.filter(run=run).order_by("id"):
+            if recommendation.state != "PENDING":
+                result["kept"] += 1
+                continue
+            final = decide(policy.created_by, recommendation.id, "APPROVE", automatic=True)
+            result["applied" if final.state == "APPLIED" else "stale"] += 1
+    return result

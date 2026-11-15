@@ -34,6 +34,7 @@ urlpatterns = [
     path("api/v1/store/offers/<uuid:offer_id>/limits", api.offer_limits),
     path("api/v1/store/offers/<uuid:offer_id>/price", api.offer_price),
     path("api/v1/store/analysis", api.store_analysis),
+    path("api/v1/store/pricing-policy", api.store_pricing_policy),
     path("api/v1/store/recommendations", api.store_recommendations),
     path("api/v1/store/recommendations/<uuid:recommendation_id>/decision", api.recommendation_decision),
 ]
