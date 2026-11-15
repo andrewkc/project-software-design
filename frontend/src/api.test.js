@@ -6,9 +6,9 @@ test("health calls same-origin Python API", async () => {
   const calls = [];
   const result = await getApiHealth(async (...args) => {
     calls.push(args);
-    return { ok: true, json: async () => ({ status: "ok", phase: 1 }) };
+    return { ok: true, json: async () => ({ status: "ok" }) };
   });
-  assert.deepEqual(result, { status: "ok", phase: 1 });
+  assert.deepEqual(result, { status: "ok" });
   assert.deepEqual(calls, [["/api/v1/health", { credentials: "same-origin" }]]);
 });
 

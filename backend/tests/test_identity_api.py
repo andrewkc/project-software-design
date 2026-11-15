@@ -73,7 +73,7 @@ def test_superuser_role(db):
 
 def test_health_public():
     response = Client().get("/api/v1/health")
-    assert response.status_code == 200 and response.json() == {"status": "ok", "phase": 1}
+    assert response.status_code == 200 and response.json() == {"status": "ok"}
 
 
 def test_me_requires_login():

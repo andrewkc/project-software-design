@@ -28,7 +28,7 @@ def user_payload(user):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def health(request):
-    return Response({"status": "ok", "phase": 1})
+    return Response({"status": "ok"})
 
 
 @api_view(["GET"])
