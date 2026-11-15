@@ -65,7 +65,7 @@ function App() {
   const [backendReady, setBackendReady] = useState(false);
   const [user, setUser] = useState(() => readSaved("bodega-user", null));
   const [products, setProducts] = useState(() => readSaved("bodega-products", starterProducts));
-  const [screen, setScreen] = useState(() => sessionStorage.getItem("bodega-screen") || "signup");
+  const [screen, setScreen] = useState(() => sessionStorage.getItem("bodega-screen") || "buyer");
   const [activeTab, setActiveTab] = useState("home");
   const [method, setMethod] = useState(null);
   const [query, setQuery] = useState("");
@@ -162,8 +162,8 @@ function App() {
     setToast("Sugerencia descartada. El precio de venta no cambió.");
   }
 
-  if (screen === "store") return <StorePanel onExit={() => setScreen("signup")} />;
-  if (screen === "buyer") return <BuyerPanel onExit={() => setScreen("signup")} />;
+  if (screen === "store") return <StorePanel onExit={() => setScreen("buyer")} />;
+  if (screen === "buyer") return <BuyerPanel onExit={() => setScreen("signup")} onManage={() => setScreen("store")} />;
 
   if (screen === "signup") {
     return (

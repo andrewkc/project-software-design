@@ -5,7 +5,7 @@ import "./buyer-panel.css";
 const money = (value) => `S/ ${Number(value).toFixed(2)}`;
 const formValues = (event) => Object.fromEntries(new FormData(event.currentTarget));
 
-export default function BuyerPanel({ onExit }) {
+export default function BuyerPanel({ onExit, onManage }) {
   const [stores, setStores] = useState([]);
   const [offers, setOffers] = useState([]);
   const [storeId, setStoreId] = useState("");
@@ -186,9 +186,9 @@ export default function BuyerPanel({ onExit }) {
     activeOrder?.payment_started, activeOrder?.state, activeOrder?.payment_state, checkPayment]);
 
   return <div className="buyer-shell">
-    <header className="buyer-header"><strong>Bodega Clara · Compras</strong><div>{user && <span>{user.name}</span>}{user && <button onClick={() => logout().catch((error) => setMessage(error.message))}>Salir de cuenta</button>}<button onClick={onExit}>Volver</button></div></header>
+    <header className="buyer-header"><strong>BodeSmart · Compras</strong><div>{user && <span>{user.name}</span>}{user && <button onClick={() => logout().catch((error) => setMessage(error.message))}>Salir de cuenta</button>}<button onClick={onManage}>Gestión de bodega</button><button onClick={onExit}>Ver prototipo</button></div></header>
     <main className="buyer-main">
-      <section className="buyer-hero"><div><span className="buyer-tag">DEMO LOCAL · SIN DINERO REAL</span><h1>Ofertas para recoger en bodega</h1><p>Elige una bodega, arma tu cesta y prueba la compra. Las cantidades y precios vienen de la API Python.</p></div></section>
+      <section className="buyer-hero"><div><span className="buyer-tag">DEMO DE PRUEBA · SIN DINERO REAL</span><h1>Ofertas para recoger en bodega</h1><p>Elige una bodega, arma tu cesta y prueba la compra. Las cantidades y precios vienen de la API Python.</p></div></section>
       {message && <p role="status" className="buyer-message">{message}</p>}
       <label className="buyer-select">Bodega <select value={storeId} onChange={(event) => { setStoreId(event.target.value); setBasket({}); }}><option value="">Selecciona una bodega</option>{stores.map((store) => <option key={store.id} value={store.id}>{store.name} · {store.address}</option>)}</select></label>
       <div className="buyer-layout"><section><h2>Ofertas disponibles</h2><div className="buyer-products">{visible.map((offer) => <article className="buyer-card" key={offer.id}><span className="buyer-category">{offer.category}</span><h3>{offer.product_name}</h3><p>Vence {offer.expiry_date} · {offer.storage_conditions}</p><p>Por {offer.sale_step} {offer.unit} · disponibles {offer.available_steps} pasos</p><div className="buyer-card-bottom"><strong>{money(offer.current_price)}</strong><button disabled={busy || basket[offer.id] >= offer.available_steps} onClick={() => add(offer)}>Añadir</button></div></article>)}</div>{visible.length === 0 && <p>No hay ofertas publicadas con stock en esta bodega.</p>}</section>

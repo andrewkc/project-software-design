@@ -94,7 +94,7 @@ export default function StorePanel({ onExit }) {
   const staff = owner || user?.role === "EMPLOYEE";
 
   return <div className="ops-shell">
-    <header className="ops-header"><div><strong>Bodega Clara</strong><span> Gestión de bodega</span></div><div>{user && <span>{user.name} · {owner ? "Dueño" : user.role === "EMPLOYEE" ? "Empleado" : user.role}</span>}{user && <button type="button" onClick={logout}>Salir de cuenta</button>}<button type="button" onClick={onExit}>Volver al prototipo</button></div></header>
+    <header className="ops-header"><div><strong>BodeSmart</strong><span> Gestión de bodega</span></div><div>{user && <span>{user.name} · {owner ? "Dueño" : user.role === "EMPLOYEE" ? "Empleado" : user.role}</span>}{user && <button type="button" onClick={logout}>Salir de cuenta</button>}<button type="button" onClick={onExit}>Volver a compras</button></div></header>
     <main className="ops-main">
       {loading && <p>Comprobando sesión…</p>}
       {!loading && !user && <ActionForm title="Ingresar a la bodega" onSubmit={login} button="Ingresar"><Field label="Correo" name="email" type="email" /><Field label="Contraseña" name="password" type="password" /></ActionForm>}
