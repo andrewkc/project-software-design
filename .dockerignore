@@ -1,0 +1,11 @@
+.env
+.git
+.venv
+.local-postgres
+.pytest_cache
+frontend/node_modules
+frontend/dist
+backend/media
+backend/staticfiles
+**/__pycache__
+**/*.pyc

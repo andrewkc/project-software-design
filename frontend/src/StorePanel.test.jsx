@@ -57,6 +57,17 @@ test("employee sees sales but not owner controls or costs", async () => {
   expect(screen.queryByText(/piso efectivo/)).toBeNull();
 });
 
+test("employee can consult only through the read-only chat API", async () => {
+  mockSession(employee);
+  apiPost.mockResolvedValue({ answer: "Almendras: 1250 disponibles.", mode: "GEMINI" });
+  render(<StorePanel onExit={() => {}} />);
+  const form = (await screen.findByText("Consulta tu inventario")).closest("section").querySelector("form");
+  fireEvent.change(form.querySelector('input[name="question"]'), { target: { value: "¿Qué stock tengo?" } });
+  fireEvent.submit(form);
+  await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/chat", { question: "¿Qué stock tengo?" }));
+  expect(await screen.findByText("Almendras: 1250 disponibles.")).toBeTruthy();
+});
+
 test("sale form sends server product, quantity and unique retry key", async () => {
   mockSession(employee);
   render(<StorePanel onExit={() => {}} />);

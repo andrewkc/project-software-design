@@ -105,7 +105,9 @@ def test_order_other_customer_is_hidden(customer, offer):
 
 
 def test_local_chat_public_only_sees_public_offers(offer, lot):
-    response = post(Client(), "/api/v1/chat", {"question": "¿Qué ofertas hay?"})
+    from django.test import override_settings
+    with override_settings(GEMINI_API_KEY=""):
+        response = post(Client(), "/api/v1/chat", {"question": "¿Qué ofertas hay?"})
     assert response.status_code == 200 and response.json()["mode"] == "LOCAL_DEMO"
     assert "Almendras" in response.json()["answer"]
     assert "25.00" not in response.json()["answer"]
@@ -113,11 +115,13 @@ def test_local_chat_public_only_sees_public_offers(offer, lot):
 
 def test_local_chat_employee_stock_only_own_store(employee, lot, other_store):
     from core.models import Product
+    from django.test import override_settings
     Product.objects.create(store=other_store, code="SECRET", name="Secreto", category="X",
                            unit="UNIT", sale_step=1, reference_price=1, storage_conditions="X")
     client = Client()
     client.force_login(employee)
-    response = post(client, "/api/v1/chat", {"question": "¿Qué stock tengo?"})
+    with override_settings(GEMINI_API_KEY=""):
+        response = post(client, "/api/v1/chat", {"question": "¿Qué stock tengo?"})
     assert response.status_code == 200
     assert "Almendras" in response.json()["answer"] and "Secreto" not in response.json()["answer"]
     assert "25.00" not in response.json()["answer"]

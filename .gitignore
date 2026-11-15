@@ -11,3 +11,4 @@ backend/media/
 
 
 .local-postgres/
+aws-deploy-policy.json

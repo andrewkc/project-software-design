@@ -34,6 +34,8 @@ export default function StorePanel({ onExit }) {
   const [recommendations, setRecommendations] = useState([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [chatReply, setChatReply] = useState("");
+  const [chatBusy, setChatBusy] = useState(false);
 
   const reload = useCallback(async (includeRecommendations = false) => {
     const [nextProducts, nextLots, nextOffers, nextMovements, nextRecommendations] = await Promise.all([
@@ -100,6 +102,7 @@ export default function StorePanel({ onExit }) {
       {message && <p className="ops-message" role="status">{message}</p>}
       {staff && <>
         <section className="ops-intro"><h1>Inventario de tu bodega</h1><p>Los saldos y movimientos provienen de PostgreSQL. La venta presencial descuenta primero los lotes aptos más próximos a cerrar.</p></section>
+        <section className="ops-card"><h2>Consulta tu inventario</h2><p>Pregunta por existencias, lotes o vencimientos de tu bodega. El asistente solo puede consultar datos.</p><form onSubmit={async (event) => { event.preventDefault(); setChatBusy(true); try { setChatReply((await apiPost("/chat", { question: values(event).question })).answer); } catch (error) { setChatReply(error.message); } finally { setChatBusy(false); } }}><label className="ops-field">Pregunta<input name="question" maxLength="1000" placeholder="¿Qué lotes vencen pronto?" required /></label><button disabled={chatBusy}>{chatBusy ? "Consultando…" : "Consultar"}</button></form>{chatReply && <p role="status">{chatReply}</p>}</section>
         <section className="ops-grid">
           {owner && <ActionForm title="Nuevo producto" disabled={busy} onSubmit={(event) => { event.preventDefault(); run(() => apiPost("/store/products", values(event)), "Producto creado."); event.currentTarget.reset(); }}>
             <Field label="Código" name="code" /><Field label="Nombre" name="name" /><Field label="Categoría" name="category" />
