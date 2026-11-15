@@ -86,7 +86,9 @@ def money(value, field, zero_allowed=False):
 
 
 def required_text(value, field, max_length=150):
-    text = str(value or "").strip()
+    if not isinstance(value, str):
+        raise DomainError("INVALID_TEXT", f"{field} debe ser texto")
+    text = value.strip()
     if not text or len(text) > max_length:
         raise DomainError("INVALID_TEXT", f"{field} es obligatorio y debe tener máximo {max_length} caracteres")
     return text

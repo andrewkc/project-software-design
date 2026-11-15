@@ -79,7 +79,10 @@ def stores(request):
 @csrf_protect
 def register_customer(request):
     def create():
-        email = str(request.data.get("email", "")).strip().lower()
+        raw_email = request.data.get("email")
+        if not isinstance(raw_email, str) or not raw_email.strip():
+            raise services.DomainError("INVALID_EMAIL", "Correo inválido")
+        email = raw_email.strip().lower()
         name = services.required_text(request.data.get("name"), "Nombre", 120)
         password = request.data.get("password")
         if not isinstance(password, str):

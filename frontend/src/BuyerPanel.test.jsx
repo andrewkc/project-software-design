@@ -150,3 +150,29 @@ test("simultaneous focus events do not duplicate verification", async () => {
   fireEvent.focus(window);
   expect(apiPost).toHaveBeenCalledTimes(1);
 });
+
+test("rapid add and remove clicks cannot exceed stock or create an empty order", async () => {
+  mockData({ id: "c1", name: "Cliente", role: "CUSTOMER" });
+  render(<BuyerPanel onExit={() => {}} />);
+  const add = await screen.findByText("Añadir");
+  for (let index = 0; index < 12; index += 1) fireEvent.click(add);
+  expect(screen.getByText("1000 G · S/ 36.00")).toBeTruthy();
+  for (let index = 0; index < 8; index += 1) {
+    const remove = screen.queryByLabelText("Quitar Almendras");
+    if (remove) fireEvent.click(remove);
+  }
+  expect(screen.getByText("Crear pedido y reservar").disabled).toBe(true);
+  expect(apiPost).not.toHaveBeenCalledWith("/orders", expect.anything());
+});
+
+test("repeated create clicks while request is pending submit one order", async () => {
+  mockData({ id: "c1", name: "Cliente", role: "CUSTOMER" });
+  apiPost.mockImplementation(() => new Promise(() => {}));
+  render(<BuyerPanel onExit={() => {}} />);
+  fireEvent.click(await screen.findByText("Añadir"));
+  const create = screen.getByText("Crear pedido y reservar");
+  fireEvent.click(create);
+  fireEvent.click(create);
+  expect(create.disabled).toBe(true);
+  expect(apiPost).toHaveBeenCalledTimes(1);
+});

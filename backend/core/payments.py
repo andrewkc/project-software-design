@@ -48,6 +48,8 @@ def _amount(value):
 
 
 def _test_order(result, order, require_url=False):
+    if not isinstance(result, dict):
+        raise services.DomainError("PAYMENT_PROVIDER_INVALID", "Respuesta de pago inválida", 503)
     external_id = result.get("id")
     if not isinstance(external_id, str) or not external_id.startswith("ORDTST"):
         raise services.DomainError("PAYMENT_NOT_TEST", "La respuesta no corresponde a una order de prueba", 503)
@@ -55,10 +57,19 @@ def _test_order(result, order, require_url=False):
         raise services.DomainError("PAYMENT_MISMATCH", "Referencia de pago distinta", 409)
     if _amount(result.get("total_amount")) != order.total or result.get("currency") != "PEN":
         raise services.DomainError("PAYMENT_MISMATCH", "Importe o moneda distintos", 409)
+    integration = result.get("integration_data")
+    if (not isinstance(integration, dict) or
+            not isinstance(integration.get("application_id"), str) or
+            not integration["application_id"] or
+            not isinstance(result.get("user_id"), str) or not result["user_id"]):
+        raise services.DomainError("PAYMENT_PROVIDER_INVALID", "Identidad del proveedor inválida", 503)
     if require_url:
         url = result.get("checkout_url")
-        parsed = urlparse(url) if isinstance(url, str) else None
-        host = parsed.hostname if parsed else None
+        try:
+            parsed = urlparse(url) if isinstance(url, str) else None
+            host = parsed.hostname if parsed else None
+        except ValueError:
+            parsed = host = None
         if not parsed or parsed.scheme != "https" or not host or not (
             host == "mercadopago.com.pe" or host.endswith(".mercadopago.com.pe")
             or host == "mercadopago.com" or host.endswith(".mercadopago.com")
