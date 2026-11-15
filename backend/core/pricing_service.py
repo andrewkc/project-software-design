@@ -148,9 +148,9 @@ def analyze_store(actor, demo_history=False):
     _owner(actor)
     if not isinstance(demo_history, bool):
         raise services.DomainError("INVALID_FLAG", "Indica explícitamente si usas historial de demo")
-    if demo_history and (not settings.DEBUG or actor.store.name not in DEMO_STORES):
+    if demo_history and (not settings.DEMO_ALLOW_SYNTHETIC_HISTORY or actor.store.name not in DEMO_STORES):
         raise services.DomainError("DEMO_HISTORY_UNAVAILABLE",
-                                   "El historial simulado solo está disponible en bodegas demo locales", 403)
+                                   "El historial simulado no está habilitado para esta bodega demo", 403)
     bundle, report = _load_model()
     now = timezone.now()
     today = timezone.localtime(now, LIMA).date()

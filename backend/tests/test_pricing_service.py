@@ -172,7 +172,7 @@ def test_employee_api_cannot_read_recommendations(employee):
                        content_type="application/json").status_code == 403
 
 
-@override_settings(DEBUG=True)
+@override_settings(DEBUG=False, DEMO_ALLOW_SYNTHETIC_HISTORY=True)
 def test_simulated_history_requires_demo_store_and_explicit_boolean(prepared):
     owner, _, _, _, _ = prepared
     with pytest.raises(services.DomainError) as error:
@@ -183,7 +183,17 @@ def test_simulated_history_requires_demo_store_and_explicit_boolean(prepared):
     assert error.value.code == "INVALID_FLAG"
 
 
-@override_settings(DEBUG=True)
+@override_settings(DEBUG=False, DEMO_ALLOW_SYNTHETIC_HISTORY=False)
+def test_simulated_history_is_disabled_by_default_even_for_demo_store(db, monkeypatch):
+    monkeypatch.setenv("DESSOF_DEMO_PASSWORD", "TemporaryDemoPass123!")
+    call_command("seed_demo", verbosity=0)
+    owner = User.objects.get(email="dueno.1@demo.example")
+    with pytest.raises(services.DomainError) as error:
+        pricing_service.analyze_store(owner, demo_history=True)
+    assert error.value.code == "DEMO_HISTORY_UNAVAILABLE"
+
+
+@override_settings(DEBUG=False, DEMO_ALLOW_SYNTHETIC_HISTORY=True)
 def test_seeded_demo_can_show_labeled_actionable_suggestion(db, monkeypatch, model_stub):
     monkeypatch.setenv("DESSOF_DEMO_PASSWORD", "TemporaryDemoPass123!")
     call_command("seed_demo", verbosity=0)

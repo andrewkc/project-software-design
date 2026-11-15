@@ -86,3 +86,4 @@ REST_FRAMEWORK = {
 MERCADOPAGO_ACCESS_TOKEN = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite").strip()
+DEMO_ALLOW_SYNTHETIC_HISTORY = os.getenv("DESSOF_ALLOW_SYNTHETIC_HISTORY", "0") == "1"
