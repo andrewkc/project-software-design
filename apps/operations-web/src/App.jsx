@@ -8,6 +8,7 @@ import { HomePage } from "./features/home/HomePage";
 import { InventoryPage } from "./features/inventory/InventoryPage";
 import { AlertsPage } from "./features/alerts/AlertsPage";
 import { InsightsPage } from "./features/insights/InsightsPage";
+import { ProfilePage } from "./features/profile/ProfilePage";
 import { ProductModal } from "./features/products/ProductModal";
 import { Icon } from "./components/Icon";
 
@@ -53,7 +54,7 @@ function App() {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const savedProfile = readSaved("bodega-user", null);
-    const profile = savedProfile || { name: "Mar\u00eda", email: data.get("email").trim(), store: "Bodega San Mart\u00edn" };
+    const profile = savedProfile || { name: "Kelvin Cahuana", email: data.get("email").trim(), store: "Bodega San Mart\u00edn" };
     setUser(profile);
     setScreen("app");
     setToast(`\u00a1Bienvenido${profile.name ? `, ${profile.name.split(" ")[0]}` : ""}!`);
@@ -93,6 +94,7 @@ function App() {
       {activeTab === "inventory" && <InventoryPage products={products} filteredProducts={filteredProducts} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} onRegister={() => openMethod("text")} />}
       {activeTab === "alerts" && <AlertsPage expiringProducts={expiringProducts} />}
       {activeTab === "insights" && <InsightsPage />}
+      {activeTab === "profile" && <ProfilePage user={user} onLogout={handleLogout} />}
     </OperationsLayout>
     {method && <ProductModal method={productMethods.find((item) => item.id === method)} onClose={() => setMethod(null)} onSubmit={addProduct} voiceCaptured={voiceCaptured} setVoiceCaptured={setVoiceCaptured} photoName={photoName} setPhotoName={setPhotoName} barcode={barcode} setBarcode={setBarcode} />}
     {toast && <div className="toast-message" role="status"><span><Icon name="check" size={17} /></span>{toast}</div>}

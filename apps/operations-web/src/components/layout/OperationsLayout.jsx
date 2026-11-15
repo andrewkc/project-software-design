@@ -6,12 +6,11 @@ import { mobileNavigation, navigation } from "../../data/demoData";
 export function OperationsLayout({ user, activeTab, expiringCount, onNavigate, onRegister, onLogout, children }) {
   return <div className="app-shell">
     <aside className="sidebar">
-      <a className="brand sidebar-brand" href="#" onClick={(event) => event.preventDefault()}><Brand /></a>
+      <a className="brand sidebar-brand" href="#" onClick={(event) => event.preventDefault()}><Brand mobile /></a>
       <div className="store-switcher"><span className="store-avatar">B</span><span className="store-label"><strong>{user?.store || "Mi bodega"}</strong><small>Mi negocio</small></span><span className="switch-arrow">⌄</span></div>
-      <span className="nav-caption">MEN&Uacute; PRINCIPAL</span>
+      <span className="nav-caption">MENÚ PRINCIPAL</span>
       <nav className="side-nav" aria-label="Navegaci&oacute;n principal">{navigation.map((item) => <button key={item.id} type="button" className={`nav-link ${activeTab === item.id ? "active" : ""}`} onClick={() => item.id === "register" ? onRegister() : onNavigate(item.id)}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <span className="nav-count">{expiringCount}</span>}</button>)}</nav>
-      <div className="sidebar-help"><span className="help-illustration"><Icon name="sparkles" size={21} /></span><strong>Un paso a la vez</strong><p>Registra tus productos y mant&eacute;n tu inventario al d&iacute;a.</p><button type="button" onClick={onRegister}>Agregar producto <Icon name="arrow" size={15} /></button></div>
-      <button className="profile-card" type="button" onClick={onLogout}><span className="profile-avatar">{(user?.name || "M").charAt(0).toUpperCase()}</span><span><strong>{user?.name || "Mar&iacute;a L&oacute;pez"}</strong><small>Jefa de bodega</small></span><span className="profile-dots">&middot;&middot;&middot;</span></button>
+      <button className="profile-card" type="button" onClick={() => onNavigate("profile")}><span className="profile-avatar">{(user?.name || "K").charAt(0).toUpperCase()}</span><span><strong>{user?.name || "Kelvin Cahuana"}</strong><small>Jefe de Bodega</small></span><span className="profile-dots">&middot;&middot;&middot;</span></button>
     </aside>
     <main className="main-area">
       {/* <header className="topbar"> */}
@@ -26,5 +25,5 @@ export function OperationsLayout({ user, activeTab, expiringCount, onNavigate, o
 }
 
 function MobileNav({ activeTab, expiringCount, onNavigate, onRegister, onLogout }) {
-  return <nav className="mobile-nav" aria-label="Navegaci&oacute;n m&oacute;vil">{mobileNavigation.map((item) => <button key={item.id} type="button" className={activeTab === item.id ? "active" : ""} onClick={() => { if (item.id === "register") return onRegister(); if (item.id === "profile") return onLogout(); onNavigate(item.id); }}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <i />}</button>)}</nav>;
+  return <nav className="mobile-nav" aria-label="Navegaci&oacute;n m&oacute;vil">{mobileNavigation.map((item) => <button key={item.id} type="button" className={activeTab === item.id ? "active" : ""} onClick={() => { if (item.id === "register") return onRegister(); onNavigate(item.id); }}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <i />}</button>)}</nav>;
 }

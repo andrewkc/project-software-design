@@ -17,7 +17,6 @@ export const navigation = [
   { id: "inventory", label: "Inventario", icon: "box" },
   { id: "register", label: "Registrar", icon: "plus" },
   { id: "alerts", label: "Vencimientos", icon: "calendar" },
-  { id: "insights", label: "Ideas para tu negocio", icon: "sparkles" },
 ];
 
 export const mobileNavigation = [
