@@ -17,7 +17,8 @@ function App() {
   const [user, setUser] = useState(() => readSaved("bodega-user", null));
   const [products, setProducts] = useState(() => {
     const savedProducts = readSaved("bodega-products", starterProducts);
-    return Array.isArray(savedProducts) ? savedProducts : starterProducts;
+    const isLegacyDemo = Array.isArray(savedProducts) && savedProducts.length <= 9 && savedProducts.every((product) => product.id >= 1 && product.id <= 9);
+    return isLegacyDemo ? starterProducts : Array.isArray(savedProducts) ? savedProducts : starterProducts;
   });
   const [screen, setScreen] = useState(() => sessionStorage.getItem("bodega-screen") === "app" ? "app" : "auth");
   const [authMode, setAuthMode] = useState("login"); // by default
