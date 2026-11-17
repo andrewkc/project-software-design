@@ -12,6 +12,8 @@ const iconPaths = {
   arrow: <><path d="M5 12h14m-6-6 6 6-6 6" /></>,
   plus: <><path d="M12 5v14m-7-7h14" /></>,
   search: <><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4 4" /></>,
+  filter: <><path d="M4 6h16M7 12h10m-7 6h4" /></>,
+  options: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
   bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4" /></>,
   close: <><path d="m18 6-12 12M6 6l12 12" /></>,
   check: <><path d="m5 12 4 4L19 6" /></>,

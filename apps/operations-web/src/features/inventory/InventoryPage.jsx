@@ -5,6 +5,7 @@ import { PageDate } from "../../components/layout/PageDate";
 
 const PAGE_SIZE = 10;
 const columns = [["name", "Producto"], ["category", "CATEGORÍA"], ["stock", "Stock"], ["price", "Precio"], ["expires", "Vencimiento"], ["status", "Estado"]];
+const operatorLabels = { contains: "Contiene", notContains: "No contiene", is: "Es exactamente", isNot: "No es", greater: "Mayor o igual a", less: "Menor o igual a" };
 
 function getStatus(product, expiringIds) {
   if (expiringIds.has(product.id)) return "Por vencer";
@@ -38,11 +39,12 @@ function matchesFilter(value, filter) {
 
 const emptyFilters = Object.fromEntries(columns.map(([key]) => [key, { operator: key === "stock" || key === "price" ? "greater" : "contains", value: "" }]));
 
-export function InventoryPage({ products, stockTotal, expiringProducts, query, onQueryChange }) {
+export function InventoryPage({ products, expiringProducts, query, onQueryChange }) {
   const [showCatalog, setShowCatalog] = useState(false);
   const [sort, setSort] = useState({ key: "name", direction: "asc" });
   const [filters, setFilters] = useState(emptyFilters);
   const [openFilter, setOpenFilter] = useState(null);
+  const [openOperator, setOpenOperator] = useState(null);
   const [page, setPage] = useState(1);
   const expiringIds = useMemo(() => new Set(expiringProducts.map((product) => product.id)), [expiringProducts]);
 
@@ -72,6 +74,7 @@ export function InventoryPage({ products, stockTotal, expiringProducts, query, o
 
   const totalPages = Math.max(1, Math.ceil(tableProducts.length / PAGE_SIZE));
   const visibleProducts = tableProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filteredStockTotal = useMemo(() => tableProducts.reduce((total, product) => total + (Number(product.stock) || 0), 0), [tableProducts]);
 
   useEffect(() => setPage(1), [query, filters, sort]);
 
@@ -87,9 +90,12 @@ export function InventoryPage({ products, stockTotal, expiringProducts, query, o
     setFilters(emptyFilters);
     onQueryChange("");
     setOpenFilter(null);
+    setOpenOperator(null);
   }
 
-  function openCatalog() {
+  function openCatalog(category) {
+    if (category) setFilters((current) => ({ ...current, category: { operator: "is", value: category } }));
+    else setFilters(emptyFilters);
     setShowCatalog(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -102,10 +108,14 @@ export function InventoryPage({ products, stockTotal, expiringProducts, query, o
   const catalogView = <>
     <button type="button" className="back-to-categories" onClick={closeCatalog}><span aria-hidden="true">←</span> Categor&iacute;as m&aacute;s comunes</button>
     <section className="welcome-row inventory-catalog-heading"><div><h1>Todo tu inventario</h1><p className="welcome-subtitle">Busca, filtra y ordena tus productos.</p></div></section>
-    <section className="content-card inventory-card inventory-catalog" id="product-catalog"><div className="inventory-toolbar"><div><h2>{tableProducts.length} resultados <span className="muted-count">&middot; {stockTotal} unidades</span></h2></div><label className="search-field"><Icon name="search" size={17} /><input aria-label="Buscar producto" placeholder="Buscar producto o categor&iacute;a" value={query} onChange={(event) => onQueryChange(event.target.value)} /></label></div><div className="table-toolbar"><span>Filtros por columna</span><button type="button" className="button button-secondary clear-filters" onClick={clearFilters}>Limpiar filtros</button></div><div className="table-wrap"><table className="notion-table"><thead><tr>{columns.map(([key, label]) => <th key={key}><div className="table-header-actions"><button type="button" className="table-sort-button" onClick={() => toggleSort(key)}>{label}<span>{sort.key === key ? sort.direction === "asc" ? "↑" : "↓" : "↕"}</span></button><button type="button" className={`table-filter-button ${filters[key].value ? "active" : ""}`} aria-label={`Filtrar ${label}`} onClick={() => setOpenFilter((current) => current === key ? null : key)}>≡</button></div>{openFilter === key && <div className="column-filter-menu"><select value={filters[key].operator} onChange={(event) => updateFilter(key, "operator", event.target.value)}><option value="contains">Contiene</option><option value="notContains">No contiene</option><option value="is">Es exactamente</option><option value="isNot">No es</option>{(key === "stock" || key === "price") && <><option value="greater">Mayor o igual a</option><option value="less">Menor o igual a</option></>}</select><input autoFocus value={filters[key].value} placeholder="Filtrar valor..." onChange={(event) => updateFilter(key, "value", event.target.value)} /><button type="button" onClick={() => updateFilter(key, "value", "")}>Limpiar</button></div>}</th>)}</tr></thead><tbody>{visibleProducts.map((product) => <tr key={product.id}><td><span className="table-product-icon">{product.icon}</span><span className="table-product-name"><strong>{product.name}</strong></span></td><td>{product.category}</td><td><strong>{product.stock} {product.unit}</strong></td><td>S/ {Number(product.price || 0).toFixed(2)}</td><td>{formatDate(product.expires)}</td><td><span className={`table-status ${getStatus(product, expiringIds) !== "Disponible" ? "table-status-warn" : ""}`}><i />{getStatus(product, expiringIds)}</span></td></tr>)}</tbody></table>{visibleProducts.length === 0 && <EmptyState icon="search" title="No encontramos productos" text="Prueba con otros filtros o registra un producto nuevo." />}</div>{tableProducts.length > 0 && <div className="inventory-pagination"><div>{Array.from({ length: totalPages }, (_, index) => <button type="button" className={page === index + 1 ? "active" : ""} key={index + 1} onClick={() => setPage(index + 1)}>{index * PAGE_SIZE + 1}-{Math.min((index + 1) * PAGE_SIZE, tableProducts.length)}</button>)}</div></div>}</section>
+    <section className="content-card inventory-card inventory-catalog" id="product-catalog"><div className="inventory-toolbar"><div>
+      <h2>{tableProducts.length} resultados <span className="muted-count">&nbsp;{filteredStockTotal} unidades</span></h2>
+      </div><label className="search-field"><Icon name="search" size={17} /><input aria-label="Buscar producto" placeholder="Buscar producto o categor&iacute;a" value={query} onChange={(event) => onQueryChange(event.target.value)} /></label></div><div className="table-toolbar"><span>Filtros por columna</span><button type="button" className="button button-secondary clear-filters" onClick={clearFilters}>Limpiar filtros</button>
+      </div><div className="table-wrap"><table className="notion-table"><thead><tr>{columns.map(([key, label]) => <th key={key}><div className="table-header-actions"><button type="button" className="table-sort-button" onClick={() => toggleSort(key)}>{label}<span>{sort.key === key ? sort.direction === "asc" ? "↑" : "↓" : "↕"}</span></button><button type="button" className={`table-filter-button ${filters[key].value ? "active" : ""}`} aria-label={`Filtrar ${label}`} onClick={() => setOpenFilter((current) => current === key ? null : key)}><Icon name={openFilter === key ? "close" : "filter"} size={12} /></button></div>{openFilter === key && <div className="column-filter-menu"><div className="filter-operator"><button type="button" className="filter-operator-trigger" onClick={() => setOpenOperator((current) => current === key ? null : key)}>{operatorLabels[filters[key].operator]}<Icon name="options" size={14} /></button>{openOperator === key && <div className="filter-operator-options">{Object.entries(operatorLabels).filter(([operator]) => (key === "stock" || key === "price") || !["greater", "less"].includes(operator)).map(([operator, label]) => <button type="button" className={filters[key].operator === operator ? "selected" : ""} key={operator} onClick={() => { updateFilter(key, "operator", operator); setOpenOperator(null); }}>{label}</button>)}</div>}</div><input autoFocus value={filters[key].value} placeholder="Filtrar valor..." onChange={(event) => updateFilter(key, "value", event.target.value)} /><button type="button" onClick={() => updateFilter(key, "value", "")}>Limpiar</button></div>}</th>)}</tr></thead><tbody>{visibleProducts.map((product) => <tr key={product.id}><td><span className="table-product-icon">{product.icon}</span><span className="table-product-name"><strong>{product.name}</strong></span></td><td>{product.category}</td><td><strong>{product.stock} {product.unit}</strong></td><td>S/ {Number(product.price || 0).toFixed(2)}</td><td>{formatDate(product.expires)}</td><td><span className={`table-status ${getStatus(product, expiringIds) !== "Disponible" ? "table-status-warn" : ""}`}><i />{getStatus(product, expiringIds)}</span></td></tr>)}</tbody></table>{visibleProducts.length === 0 && <EmptyState icon="search" title="No encontramos productos" text="Prueba con otros filtros o registra un producto nuevo." />}</div>{tableProducts.length > 0 && <div className="inventory-pagination"><div>{Array.from({ length: totalPages }, (_, index) => <button type="button" className={page === index + 1 ? "active" : ""} key={index + 1} onClick={() => setPage(index + 1)}>{index * PAGE_SIZE + 1}-{Math.min((index + 1) * PAGE_SIZE, tableProducts.length)}</button>)}</div></div>}
+      </section>
   </>;
 
-  const categoriesView = <><section className="welcome-row"><div><h1>Categor&iacute;as m&aacute;s comunes</h1></div><button type="button" className="button button-primary" onClick={openCatalog}><Icon name="search" size={18} />Ver todos los productos</button></section><section className="inventory-categories"><div className="category-card-grid">{categoryCards.map((category, index) => <article className={`inventory-category-card category-tone-${index % 6}`} key={category.name}><div className="category-card-art" aria-hidden="true" /><div className="category-card-content"><h3>{category.name}</h3></div></article>)}</div>{categoryCards.length === 0 && <EmptyState icon="box" title="A&uacute;n no tienes categor&iacute;as" text="Registra un producto para empezar a organizar tu inventario." />}</section></>;
+  const categoriesView = <><section className="welcome-row"><div><h1>Categor&iacute;as m&aacute;s comunes</h1></div><button type="button" className="button button-primary" onClick={() => openCatalog()}><Icon name="search" size={18} />Ver todos los productos</button></section><section className="inventory-categories"><div className="category-card-grid">{categoryCards.map((category, index) => <button type="button" className={`inventory-category-card category-tone-${index % 6}`} key={category.name} onClick={() => openCatalog(category.name)}><div className="category-card-art" aria-hidden="true" /><div className="category-card-content"><h3>{category.name}</h3></div></button>)}</div>{categoryCards.length === 0 && <EmptyState icon="box" title="A&uacute;n no tienes categor&iacute;as" text="Registra un producto para empezar a organizar tu inventario." />}</section></>;
 
   return <div className="page-content inner-page"><PageDate />{showCatalog ? catalogView : categoriesView}</div>;
 }

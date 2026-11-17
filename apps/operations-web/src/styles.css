@@ -254,7 +254,8 @@ input::placeholder { color: #a6aca5; }
 .inventory-section-heading { margin-bottom: 19px; }
 .inventory-section-heading h2 { margin: 0; color: #303932; font: 700 calc(20px * var(--font-scale)) "Manrope", sans-serif; letter-spacing: -.5px; }
 .category-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
-.inventory-category-card { display: flex; position: relative; min-height: 155px; overflow: hidden; isolation: isolate; border: 1px solid #e5ebe2; border-radius: 11px; background: #dfeadf; }
+.inventory-category-card { display: flex; position: relative; min-height: 155px; overflow: hidden; isolation: isolate; padding: 0; border: 1px solid #e5ebe2; border-radius: 11px; background: #dfeadf; text-align: left; cursor: pointer; font: inherit; }
+.inventory-category-card:hover { transform: translateY(-2px); box-shadow: 0 7px 16px #314e3620; }
 .category-card-art { position: absolute; z-index: -1; inset: 0; opacity: .86; background-image: url("./assets/inventory-category-bg.svg"); background-position: center; background-size: cover; }
 .category-card-content { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; min-width: 0; padding: 15px; background: linear-gradient(180deg, transparent 15%, #26372a9c 100%); }
 .inventory-category-card h3 { overflow: hidden; margin: 6px 0 4px; color: #fff; font: 700 calc(16px * var(--font-scale)) "Manrope", sans-serif; text-overflow: ellipsis; white-space: nowrap; }
@@ -286,7 +287,7 @@ input::placeholder { color: #a6aca5; }
 .inventory-filters select { height: 32px; padding: 0 9px; border: 1px solid #e3e8e1; border-radius: 7px; color: #657066; background: #fff; font-size: calc(9px * var(--font-scale)); }
 .clear-filters { min-height: 32px; padding: 0 10px; font-size: calc(9px * var(--font-scale)); }
 .table-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; color: #98a198; font-size: calc(9px * var(--font-scale)); }
-.table-wrap { overflow-x: auto; }
+.table-wrap { overflow: visible; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
 th { height: 36px; position: relative; color: #a0a69e; font-size: calc(8px * var(--font-scale)); font-weight: 700; letter-spacing: .7px; }
 .table-header-actions { display: flex; align-items: center; gap: 5px; }
@@ -295,9 +296,19 @@ th { height: 36px; position: relative; color: #a0a69e; font-size: calc(8px * var
 .table-sort-button span { color: #b2bbb1; font-size: calc(10px * var(--font-scale)); }
 .table-filter-button { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 4px; color: #a2aca1; background: transparent; font-size: calc(12px * var(--font-scale)); cursor: pointer; }
 .table-filter-button:hover, .table-filter-button.active { color: #397a55; background: #eef5ed; }
-.column-filter-menu { position: absolute; z-index: 4; top: 30px; left: 0; display: grid; gap: 7px; width: 175px; padding: 10px; border: 1px solid #e1e8df; border-radius: 8px; background: #fff; box-shadow: 0 8px 24px #263b251f; text-align: left; }
-.column-filter-menu select, .column-filter-menu input { width: 100%; height: 28px; padding: 0 6px; border: 1px solid #e3e8e1; border-radius: 5px; color: #596359; background: #fff; font-size: calc(9px * var(--font-scale)); }
-.column-filter-menu button { justify-self: start; padding: 0; border: 0; color: #397a55; background: transparent; font-size: calc(9px * var(--font-scale)); cursor: pointer; }
+.column-filter-menu { position: absolute; z-index: 20; right: 0; bottom: calc(100% + 8px); left: 0; display: grid; gap: 8px; width: 190px; padding: 12px; border: 1px solid #dce8d9; border-radius: 14px; color: #485c4b; background: #f7f8f3; box-shadow: 0 10px 26px #263b2524; text-align: left; }
+.column-filter-menu select, .column-filter-menu input { width: 100%; height: 30px; padding: 0 8px; border: 1px solid #dce8d9; border-radius: 9px; outline: none; color: #485c4b; background: #fff; font-size: calc(9px * var(--font-scale)); accent-color: #77a781; color-scheme: light; }
+.column-filter-menu select option:checked, .column-filter-menu select option:hover { color: #2c6646; background: #dfeedd; }
+.column-filter-menu select:focus, .column-filter-menu input:focus { border-color: #77a781; box-shadow: 0 0 0 3px #4d8b5c16; }
+.filter-operator { position: relative; }
+.filter-operator-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 30px; padding: 0 8px; border: 1px solid #dce8d9; border-radius: 9px; color: #485c4b; background: #fff; font-size: calc(9px * var(--font-scale)); cursor: pointer; }
+.filter-operator-trigger:hover { border-color: #77a781; background: #eef5ed; }
+.filter-operator-trigger svg { color: #77a781; }
+.filter-operator-options { position: absolute; z-index: 5; right: 0; bottom: 34px; left: 0; display: grid; gap: 2px; padding: 5px; border: 1px solid #dce8d9; border-radius: 9px; background: #fff; box-shadow: 0 8px 20px #263b2520; }
+.filter-operator-options button { width: 100%; padding: 6px 7px; border: 0; border-radius: 6px; color: #596359; background: transparent; text-align: left; font-size: calc(9px * var(--font-scale)); font-weight: 400; text-decoration: none; cursor: pointer; }
+.filter-operator-options button:hover, .filter-operator-options button.selected { color: #2c6646; background: #dfeedd; }
+.column-filter-menu button { justify-self: start; padding: 0; border: 0; color: #397a55; background: transparent; font-size: calc(9px * var(--font-scale)); font-weight: 400; text-decoration: none; cursor: pointer; }
+.column-filter-menu button:hover { color: #2c6646; text-decoration: none; }
 td { height: 62px; border-top: 1px solid #eff1ed; color: #616960; font-size: calc(10px * var(--font-scale)); white-space: nowrap; }
 td:first-child { min-width: 185px; display: flex; align-items: center; gap: 9px; }
 .table-product-icon { width: 33px; height: 33px; flex-basis: 33px; font-size: calc(16px * var(--font-scale)); }
@@ -514,6 +525,7 @@ td:nth-child(2) strong { color: #4e574e; font-size: calc(10px * var(--font-scale
   .clear-filters { flex: 1; }
   .table-toolbar { align-items: flex-start; flex-direction: column; gap: 8px; }
   .column-filter-menu { position: fixed; top: auto; right: 14px; bottom: 75px; left: 14px; width: auto; }
+  .table-wrap { overflow-x: auto; overflow-y: visible; }
   .inventory-pagination { justify-items: center; }
   .inventory-pagination > div { justify-content: center; }
   .inventory-card, .alerts-card { padding: 15px 12px; }
