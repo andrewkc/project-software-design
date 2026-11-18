@@ -10,6 +10,7 @@ import { AlertsPage } from "./features/alerts/AlertsPage";
 import { InsightsPage } from "./features/insights/InsightsPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { ProductModal } from "./features/products/ProductModal";
+import { RegisterPage } from "./features/register/RegisterPage";
 import { Icon } from "./components/Icon";
 
 function App() {
@@ -90,9 +91,10 @@ function App() {
   
   if (screen === "auth") return <AuthScreen mode={authMode} onModeChange={setAuthMode} onLogin={finishLogin} onSignup={finishSignup} onForgotPassword={() => setToast("La recuperaci\u00f3n de contrase\u00f1a estar\u00e1 disponible pronto.")} />;
   return <>
-    <OperationsLayout user={user} activeTab={activeTab} expiringCount={expiringProducts.length} onNavigate={setActiveTab} onRegister={() => openMethod("text")} onLogout={handleLogout}>
-      {activeTab === "home" && <HomePage user={user} products={products} expiringProducts={expiringProducts} stockTotal={stockTotal} stockSeries={stockSeries} categoryTotals={categoryTotals} maxCategoryTotal={maxCategoryTotal} onRegister={() => openMethod("text")} onNavigate={setActiveTab} />}
+    <OperationsLayout user={user} activeTab={activeTab} expiringCount={expiringProducts.length} onNavigate={setActiveTab} onRegister={() => setActiveTab("register")} onLogout={handleLogout}>
+      {activeTab === "home" && <HomePage user={user} products={products} expiringProducts={expiringProducts} stockTotal={stockTotal} stockSeries={stockSeries} categoryTotals={categoryTotals} maxCategoryTotal={maxCategoryTotal} onRegister={() => setActiveTab("register")} onNavigate={setActiveTab} />}
       {activeTab === "inventory" && <InventoryPage products={products} filteredProducts={filteredProducts} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} onRegister={() => openMethod("text")} />}
+      {activeTab === "register" && <RegisterPage products={products} onSubmit={addProduct} />}
       {activeTab === "alerts" && <AlertsPage expiringProducts={expiringProducts} />}
       {activeTab === "insights" && <InsightsPage />}
       {activeTab === "profile" && <ProfilePage user={user} onLogout={handleLogout} />}
