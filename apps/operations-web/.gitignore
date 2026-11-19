@@ -1,2 +1,6 @@
 node_modules/
 dist/
+
+# Temporales dentro del app (refuerzo de la regla raíz)
+temp/
+**/temp/

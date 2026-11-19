@@ -1,1 +1,7 @@
+# Temporary folders: do not track or upload any temp/ folders
 temp/
+**/temp/
+
+# Node dependencies (includes apps/operations-web/node_modules)
+node_modules/
+**/node_modules/
