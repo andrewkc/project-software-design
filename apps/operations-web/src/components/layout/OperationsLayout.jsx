@@ -3,16 +3,22 @@ import { Brand } from "../Brand";
 import { Icon } from "../Icon";
 import { mobileNavigation, navigation } from "../../data/demoData";
 import { isJefe } from "../../lib/permissions";
+import { workspaceCopy } from "../../lib/workspaceCopy";
+import { profileNames } from "../../lib/profileNames";
 import { LayoutContext } from "./LayoutContext";
 
 export function OperationsLayout({ user, activeTab, expiringCount, onNavigate, onRegister, onLogout, children }) {
+  const copy = workspaceCopy(user);
+  const { displayName, initial } = profileNames(user);
   return <LayoutContext.Provider value={{ user, activeTab, onNavigate }}><div className="app-shell">
     <aside className="sidebar">
       <a className="brand sidebar-brand" href="#" onClick={(event) => event.preventDefault()}><Brand mobile /></a>
-      <div className="store-switcher"><span className="store-avatar">B</span><span className="store-label"><strong>{user?.store || "Mi bodega"}</strong><small>Mi negocio</small></span><span className="switch-arrow">˅</span></div>
+      <div className="store-switcher"><span className="store-avatar">B</span><span className="store-label"><strong>{copy.storeName}</strong><small>{copy.storeCaption}</small></span>
+      {/* <span className="switch-arrow">˅</span> */}
+      </div>
       <span className="nav-caption">MENÚ PRINCIPAL</span>
       <nav className="side-nav" aria-label="Navegaci&oacute;n principal">{navigation.filter((item) => !item.jefeOnly || isJefe(user)).map((item) => <button key={item.id} type="button" className={`nav-link ${activeTab === item.id ? "active" : ""}`} onClick={() => item.id === "register" ? onRegister() : onNavigate(item.id)}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <span className="nav-count">{expiringCount}</span>}</button>)}</nav>
-      <button className="profile-card" type="button" onClick={() => onNavigate("profile")}><span className="profile-avatar">{(user?.name || "K").charAt(0).toUpperCase()}</span><span><strong>{user?.name || "Kelvin Cahuana"}</strong><small>{isJefe(user) ? "Jefe de Bodega" : "Empleado"}</small></span><span className="profile-dots">&middot;&middot;&middot;</span></button>
+      <button className="profile-card" type="button" onClick={() => onNavigate("profile")}><span className="profile-avatar">{initial}</span><span><strong>{displayName}</strong><small>{isJefe(user) ? "Jefe de Bodega" : "Empleado"}</small></span><span className="profile-dots">&middot;&middot;&middot;</span></button>
     </aside>
     <main className="main-area">
       {/* <header className="topbar"> */}

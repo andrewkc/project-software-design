@@ -28,7 +28,7 @@ export const starterProducts = [
 ];
 
 export const productMethods = [
-  { id: "photo", title: "Toma una foto", subtitle: "De tu mercader\u00eda o boleta", icon: "camera", tint: "peach", tag: "Con imagen" },
+  { id: "photo", title: "Toma una foto", subtitle: "De la mercader\u00eda o boleta", icon: "camera", tint: "peach", tag: "Con imagen" },
   { id: "voice", title: "Habla para registrar", subtitle: "Cu\u00e9ntanos qu\u00e9 ingres\u00f3", icon: "mic", tint: "lavender", tag: "Manos libres" },
   { id: "text", title: "Escribe para registrar", subtitle: "Agrega los datos a tu ritmo", icon: "edit", tint: "mint", tag: "Manual" },
   { id: "scan", title: "Escanea un producto", subtitle: "Usa el c\u00f3digo de barras", icon: "scan", tint: "yellow", tag: "C\u00f3digo de barras" },

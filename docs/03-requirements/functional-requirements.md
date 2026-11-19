@@ -22,3 +22,7 @@
 | RF-16 | El empleado edita solo filas activas, no bloqueadas y creadas por él; no elimina ni desactiva. | CU-02, RN-10, ADR-001 (propuesto) |
 | RF-17 | El jefe bloquea/desbloquea filas; una fila bloqueada solo la edita el jefe. | CU-02, RN-11, ADR-001 (propuesto) |
 | RF-18 | El jefe desactiva productos conservando historial; un ajuste directo de stock registra responsable y valores anterior/nuevo. | CU-02, CU-07, RN-03, RN-11, ADR-001 (propuesto) |
+| RF-19 | Los perfiles se persisten en SQLite: el login verifica correo, contraseña y estado; el registro y el alta de empleados insertan un registro único por correo. | CU-01, CU-03, ADR-002 (propuesto) |
+| RF-20 | La interfaz adapta el lenguaje al rol: el jefe ve referencias a su bodega/inventario; el empleado ve la bodega asignada y el inventario de la bodega, sin presentarse como propietario. | CU-02, CU-03, RN-02, RN-10, ADR-001 (propuesto) |
+| RF-21 | Junto al avatar circular de perfil se muestra siempre primer nombre y primer apellido, sin importar el rol; el nombre completo queda disponible en la página de perfil. | CU-01, CU-03, EN-01, ADR-001 (propuesto) |
+| RF-22 | El inventario muestra el ID de cada fila y el autor como "Agregado por usted" o "Agregado por <nombre corto>"; el registro permite elegir el emoji del producto en cualquier modo. | CU-02, CU-04, EN-03, RN-03, RN-10, ADR-001 (propuesto) |

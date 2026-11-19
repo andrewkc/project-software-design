@@ -3,10 +3,12 @@ import { Icon } from "../../components/Icon";
 import { PageDate } from "../../components/layout/PageDate";
 import { generatePassword } from "../../lib/accountSecurity";
 
-export function EmployeesPage({ employees, movements, user, onCreateEmployee, onRevokeEmployee, onSwitchUser, onBackToJefe }) {
+export function EmployeesPage({ employees, movements, onCreateEmployee, onRevokeEmployee }) {
   const [password, setPassword] = useState(() => generatePassword());
   const [credentials, setCredentials] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showCredentialsPassword, setShowCredentialsPassword] = useState(false);
   const activeEmployees = employees.filter((employee) => employee.activo !== false);
   const revokedEmployees = employees.filter((employee) => employee.activo === false);
 
@@ -19,6 +21,8 @@ export function EmployeesPage({ employees, movements, user, onCreateEmployee, on
     if (!onCreateEmployee(event, password)) return;
     setCredentials({ name, email, password });
     setCopied(false);
+    setShowPassword(false);
+    setShowCredentialsPassword(false);
     setPassword(generatePassword());
   }
 
@@ -46,15 +50,16 @@ export function EmployeesPage({ employees, movements, user, onCreateEmployee, on
         <div className="password-generator">
           <span className="field-caption">Contraseña inicial</span>
           <div className="generated-password-row">
-            <input className="employee-input generated-password" readOnly value={password} aria-label="Contraseña inicial generada" />
-            <button className="row-action" type="button" title="Generar otra contraseña" aria-label="Generar otra contraseña" onClick={() => setPassword(generatePassword())}><Icon name="refresh" size={15} /></button>
+            <input className="employee-input generated-password" type={showPassword ? "text" : "password"} readOnly value={password} aria-label="Contraseña inicial generada" />
+            <button className="row-action password-action password-refresh" type="button" title="Generar otra contraseña" aria-label="Generar otra contraseña" onClick={() => setPassword(generatePassword())}><Icon name="refresh" size={15} /></button>
+            <button className="row-action password-action password-reveal" type="button" title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowPassword((current) => !current)}><Icon name={showPassword ? "eyeOff" : "eye"} size={15} /></button>
           </div>
           {/* <small>Generada automáticamente. Entrega las credenciales al empleado.</small> */}
         </div>
         <button className="button button-primary" type="submit"><Icon name="plus" size={16} />Crear cuenta</button>
       </form>
       {credentials && <div className="credentials-card" role="status">
-        <div><strong>Credenciales de {credentials.name}</strong><span>Correo: {credentials.email}</span><span>Contraseña: <code>{credentials.password}</code></span></div>
+        <div><strong>Credenciales de {credentials.name}</strong><span>Correo: {credentials.email}</span><span className="credentials-password">Contraseña: <code>{showCredentialsPassword ? credentials.password : "•".repeat(credentials.password.length)}</code><button className="row-action" type="button" title={showCredentialsPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-label={showCredentialsPassword ? "Ocultar contraseña" : "Mostrar contraseña"} onClick={() => setShowCredentialsPassword((current) => !current)}><Icon name={showCredentialsPassword ? "eyeOff" : "eye"} size={14} /></button></span></div>
         <button className="button button-secondary" type="button" onClick={copyCredentials}><Icon name={copied ? "check" : "options"} size={15} />{copied ? "Copiado" : "Copiar"}</button>
       </div>}
       {/* <p className="employees-note">El empleado edita solo sus filas. Credenciales guardadas en este prototipo local.</p> */}
@@ -66,8 +71,7 @@ export function EmployeesPage({ employees, movements, user, onCreateEmployee, on
           <span className="employee-avatar">{employee.name.charAt(0).toUpperCase()}</span>
           <span className="employee-info"><strong>{employee.name}</strong><small>{employee.email}</small></span>
           <span className="employee-role">Empleado</span>
-          <button className="button button-secondary" type="button" onClick={() => onSwitchUser(employee)}>Ver como empleado</button>
-          <button className="row-action row-action-delete" type="button" aria-label={`Revocar acceso de ${employee.name}`} title="Revocar acceso" onClick={() => onRevokeEmployee(employee.id)}><Icon name="eyeOff" size={15} /></button>
+          <button className="row-action row-action-delete" type="button" aria-label={`Revocar acceso de ${employee.name}`} title="Revocar acceso" onClick={() => onRevokeEmployee(employee.id)}><Icon name="trash" size={15} /></button>
         </div>)}
         {activeEmployees.length === 0 && <p className="employees-empty">Todavía no creaste cuentas de empleado.</p>}
       </div>
@@ -92,6 +96,5 @@ export function EmployeesPage({ employees, movements, user, onCreateEmployee, on
         {movements.length === 0 && <p className="employees-empty">Todav&iacute;a no se registraron ajustes de stock.</p>}
       </div>
     </section>
-    {(!user || user.role !== "jefe") && <button className="button button-secondary back-to-jefe" type="button" onClick={onBackToJefe}>Volver a la cuenta del jefe</button>}
   </div>;
 }
