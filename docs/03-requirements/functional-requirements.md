@@ -18,3 +18,7 @@
 | RF-12 | Jefe revisa, modifica, aprueba o rechaza sugerencias de descuento. | CU-08, RN-08 |
 | RF-13 | Jefe revisa, modifica, aprueba o rechaza sugerencias de reposición. | CU-09, RN-08 |
 | RF-14 | Aprobar reposición no genera compra ni modifica inventario. | CU-09, RN-08 |
+| RF-15 | El jefe crea cuentas de empleado con contraseña inicial generada, entrega credenciales y revoca accesos conservando el historial. | CU-03, RN-02, ADR-001 (propuesto) |
+| RF-16 | El empleado edita solo filas activas, no bloqueadas y creadas por él; no elimina ni desactiva. | CU-02, RN-10, ADR-001 (propuesto) |
+| RF-17 | El jefe bloquea/desbloquea filas; una fila bloqueada solo la edita el jefe. | CU-02, RN-11, ADR-001 (propuesto) |
+| RF-18 | El jefe desactiva productos conservando historial; un ajuste directo de stock registra responsable y valores anterior/nuevo. | CU-02, CU-07, RN-03, RN-11, ADR-001 (propuesto) |

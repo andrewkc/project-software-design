@@ -30,3 +30,10 @@
 21. Alta inicial de cuentas y asignación de bodegas.
 22. Migración de datos manuales.
 23. Retención de movimientos e históricos.
+
+## Actualizado por ADR-001
+
+- 5: el jefe retira el acceso del empleado a su bodega; la cuenta y el historial de movimientos permanecen.
+- 11: queda pendiente definir el lote del movimiento de ajuste generado por una edición directa de stock.
+- 21: el alta de cuentas de empleado la realiza el jefe de la bodega; el administrador de plataforma queda fuera de ese flujo en el MVP.
+- Cuestión nueva: ¿cómo se representa una fila desactivada en las consultas y por cuánto tiempo se conserva?

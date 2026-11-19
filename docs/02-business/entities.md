@@ -4,7 +4,7 @@
 |---|---|---|
 | EN-01 | Cuenta de usuario | idCuenta, nombre, correo, rol, estado |
 | EN-02 | Bodega | idBodega, nombre, dirección, ubicación, presupuestoReposicion |
-| EN-03 | Producto | idProducto, nombre, categoría, unidadMedida, precioVenta, estado |
+| EN-03 | Producto | idProducto, nombre, categoría, unidadMedida, precioVenta, estado, creadoPor (EN-01), bloqueado, bloqueadoPor (EN-01) |
 | EN-04 | Lote | idLote, fechaIngreso, fechaVencimiento opcional, cantidadDisponible, costoUnitario |
 | EN-05 | Movimiento de inventario | idMovimiento, fechaHora, tipo, motivo, total opcional |
 | EN-06 | Detalle de movimiento | idDetalle, cantidad, importeUnitario opcional, subtotal opcional |
