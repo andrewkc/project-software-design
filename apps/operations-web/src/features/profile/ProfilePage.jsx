@@ -10,7 +10,9 @@ export function ProfilePage({ user, onLogout }) {
   return <div className="page-content inner-page">
     <PageDate />
     <section className="welcome-row">
-      <div><p className="date-greeting">MI CUENTA</p><h1>Perfil</h1><p className="welcome-subtitle">Administra la información de tu cuenta y tu bodega.</p></div>
+      <div>
+        {/* <p className="date-greeting">MI CUENTA</p> */}
+        <h1>Perfil</h1><p className="welcome-subtitle">Administra la información de tu cuenta y tu bodega.</p></div>
     </section>
     <section className="profile-page-card">
       <div className="profile-page-avatar">{name.charAt(0).toUpperCase()}</div>

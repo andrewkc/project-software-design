@@ -3,8 +3,8 @@ import { Icon } from "../Icon";
 
 export function ProductRow({ product, type }) {
   const days = product.expires ? Math.ceil((new Date(`${product.expires}T00:00:00`) - new Date(new Date().toDateString())) / 86400000) : null;
-  const expirationLabel = days === 0 ? "Vence hoy" : days === 1 ? "Vence ma\u00f1ana" : `En ${days} d\u00edas`;
-  return <div className="product-row"><span className="product-emoji">{product.icon}</span><span className="product-name"><strong>{product.name}</strong><small>{product.category} \u00b7 {product.stock} {product.unit}</small></span><span className={`status-pill ${type === "expiry" ? "status-expiry" : ""}`}><i />{type === "expiry" ? expirationLabel : "Revisar stock"}</span></div>;
+  const expirationLabel = days === 0 ? "Vence hoy" : days === 1 ? "Vence mañana" : `En ${days} días`;
+  return <div className="product-row"><span className="product-emoji">{product.icon}</span><span className="product-name"><strong>{product.name}</strong><small>{product.category} · {product.stock} {product.unit}</small></span><span className={`status-pill ${type === "expiry" ? "status-expiry" : ""}`}><i />{type === "expiry" ? expirationLabel : "Revisar stock"}</span></div>;
 }
 
 export function ProductTableRow({ product, expiring }) {
