@@ -98,7 +98,7 @@ export function BarcodeCapture({ barcode, setBarcode, onExample }) {
         streamRef.current = stream;
         setCameraReady(true);
       } catch {
-        setScanMessage("No se pudo activar la c�mara. Ingresa el Código manualmente.");
+        setScanMessage("No se pudo activar la cámara. Ingresa el Código manualmente.");
       }
     }
     startCamera();
@@ -133,4 +133,116 @@ export function BarcodeCapture({ barcode, setBarcode, onExample }) {
   return <><div className="barcode-zone barcode-camera-zone"><div className="barcode-camera-preview">{cameraReady ? <video ref={videoRef} autoPlay muted playsInline aria-label="Vista previa del escáner" /> : <span><Icon name="scan" size={25} /> Cámara desactivada</span>}</div><button type="button" className="barcode-scan-button" onClick={scanCode}><Icon name="scan" size={18} /> Escanear código</button>{scanMessage && <p className="barcode-scan-message">{scanMessage}</p>}</div><label className="barcode-manual-label">Buscar código directamente<div className="barcode-manual-input"><input value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="Código de barras" aria-label="Código de barras" /><button type="button" aria-label="Buscar Código" onClick={() => setScanMessage(barcode.trim() ? "Código listo para registrar." : "Ingresa un Código primero.")}><Icon name="search" size={17} /></button></div></label></>;
 }
 
-export function ProductForm({ prefill, onSubmit, onClose }) { return <form className="product-form" onSubmit={onSubmit}><label className="full-field">Nombre del producto<input name="productName" placeholder="Ej. Yogurt natural" defaultValue={prefill ? "Yogurt natural" : ""} required /></label><label>Icono / emoji<input name="icon" type="text" placeholder="📦" maxLength="8" defaultValue={prefill ? "🥛" : "📦"} /></label><label>Categor&iacute;a<select name="category" defaultValue="Abarrotes"><option>Abarrotes</option><option>L&aacute;cteos</option><option>Frutas</option><option>Bebidas</option><option>Limpieza</option><option>Otros</option></select></label><label>Cantidad<div className="input-with-suffix"><input name="quantity" type="number" min="1" defaultValue={prefill ? "6" : ""} placeholder="0" required /><select name="unit" aria-label="Unidad"><option>unid.</option><option>kg</option><option>paq.</option><option>caja</option><option>litro</option></select></div></label><label>Precio de venta<div className="input-with-prefix"><span>S/</span><input name="price" type="number" min="0" step="0.10" placeholder="0.00" /></div></label><label>Fecha de vencimiento<input name="expires" type="date" /></label><p className="modal-prototype-note" /><div className="modal-actions"><button type="button" className="button button-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="button button-primary">Guardar en inventario</button></div></form>; }
+const PRODUCT_EMOJIS = [
+  { emoji: "📦", keywords: "caja paquete empaque producto general" },
+  { emoji: "🥛", keywords: "leche lacteos yogurt" },
+  { emoji: "🍎", keywords: "manzana fruta" },
+  { emoji: "🍊", keywords: "naranja fruta citrico" },
+  { emoji: "🍋", keywords: "limon fruta citrico" },
+  { emoji: "🍌", keywords: "platano banana fruta" },
+  { emoji: "🍇", keywords: "uvas fruta" },
+  { emoji: "🍓", keywords: "fresa fruta" },
+  { emoji: "🍉", keywords: "sandia fruta" },
+  { emoji: "🍍", keywords: "pina fruta" },
+  { emoji: "🥝", keywords: "kiwi fruta" },
+  { emoji: "🍑", keywords: "durazno melocoton fruta" },
+  { emoji: "🍐", keywords: "pera fruta" },
+  { emoji: "🍒", keywords: "cereza fruta" },
+  { emoji: "🫐", keywords: "arandanos fruta" },
+  { emoji: "🥑", keywords: "aguacate palta fruta" },
+  { emoji: "🥥", keywords: "coco fruta" },
+  { emoji: "🥚", keywords: "huevos" },
+  { emoji: "🍞", keywords: "pan panaderia" },
+  { emoji: "🥐", keywords: "croissant panaderia" },
+  { emoji: "🥖", keywords: "baguette pan panaderia" },
+  { emoji: "🧀", keywords: "queso lacteos" },
+  { emoji: "🧈", keywords: "mantequilla lacteos" },
+  { emoji: "🍖", keywords: "carne" },
+  { emoji: "🥩", keywords: "carne bistec" },
+  { emoji: "🍗", keywords: "pollo carne" },
+  { emoji: "🐟", keywords: "pescado" },
+  { emoji: "🥦", keywords: "brocoli verdura" },
+  { emoji: "🥕", keywords: "zanahoria verdura" },
+  { emoji: "🍅", keywords: "tomate verdura" },
+  { emoji: "🥬", keywords: "lechuga verdura" },
+  { emoji: "🌽", keywords: "maiz verdura" },
+  { emoji: "🥔", keywords: "papa patata verdura" },
+  { emoji: "🧅", keywords: "cebolla verdura" },
+  { emoji: "🧄", keywords: "ajo" },
+  { emoji: "🌶️", keywords: "chile aji picante" },
+  { emoji: "🍚", keywords: "arroz" },
+  { emoji: "🍝", keywords: "pasta fideos espaguetti" },
+  { emoji: "🥫", keywords: "conserva lata" },
+  { emoji: "🫙", keywords: "frasco conserva" },
+  { emoji: "🧂", keywords: "sal" },
+  { emoji: "🍯", keywords: "miel" },
+  { emoji: "🍫", keywords: "chocolate dulce" },
+  { emoji: "🍬", keywords: "caramelo dulce" },
+  { emoji: "🍪", keywords: "galleta dulce" },
+  { emoji: "🍩", keywords: "dona dulce" },
+  { emoji: "🧁", keywords: "cupcake pastel" },
+  { emoji: "🍰", keywords: "pastel torta" },
+  { emoji: "🍦", keywords: "helado" },
+  { emoji: "🥜", keywords: "mani nueces" },
+  { emoji: "🍿", keywords: "palomitas" },
+  { emoji: "☕", keywords: "cafe bebida" },
+  { emoji: "🍵", keywords: "te bebida" },
+  { emoji: "🧃", keywords: "jugo bebida" },
+  { emoji: "🥤", keywords: "refresco gaseosa bebida" },
+  { emoji: "💧", keywords: "agua bebida" },
+  { emoji: "🧴", keywords: "shampoo limpieza locion" },
+  { emoji: "🧼", keywords: "jabon limpieza" },
+  { emoji: "🧽", keywords: "esponja limpieza" },
+  { emoji: "🧻", keywords: "papel higienico limpieza" },
+  { emoji: "🧹", keywords: "escoba limpieza" },
+  { emoji: "🪣", keywords: "cubeta limpieza" },
+  { emoji: "🧺", keywords: "canasta cesta" },
+  { emoji: "🛒", keywords: "carrito compra" },
+  { emoji: "🏷️", keywords: "etiqueta precio" },
+];
+
+export function ProductIconPicker({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const rootRef = useRef(null);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    searchRef.current?.focus();
+    function handleOutside(event) {
+      if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false);
+    }
+    function handleKey(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  const term = query.trim().toLowerCase();
+  const results = term ? PRODUCT_EMOJIS.filter((item) => item.keywords.includes(term) || item.emoji === query.trim()) : PRODUCT_EMOJIS;
+
+  return <div className="icon-picker" ref={rootRef}>
+    <button type="button" className="icon-picker-trigger" aria-haspopup="dialog" aria-expanded={open} aria-label="Elegir ícono del producto" onClick={() => setOpen((current) => !current)}>
+      <span className="icon-picker-current">{value || "📦"}</span>
+      <span className="icon-picker-label">Cambiar ícono</span>
+    </button>
+    <input type="hidden" name="icon" value={value || "📦"} />
+    {open && <div className="icon-picker-popover" role="dialog" aria-label="Elegir ícono">
+      <div className="icon-picker-search"><Icon name="search" size={15} /><input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar un ícono..." aria-label="Buscar un ícono" />{query && <button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery("")}><Icon name="close" size={13} /></button>}</div>
+      <p className="icon-picker-caption">{term ? "Resultados" : "Sugerencias"}</p>
+      <div className="icon-picker-grid">{results.map((item) => <button type="button" key={item.emoji} className={`icon-picker-option ${value === item.emoji ? "selected" : ""}`} title={item.keywords} onClick={() => { onChange(item.emoji); setOpen(false); setQuery(""); }}>{item.emoji}</button>)}</div>
+      {results.length === 0 && <p className="icon-picker-empty">No encontramos íconos para «{query.trim()}».</p>}
+    </div>}
+  </div>;
+}
+
+export function ProductForm({ prefill, onSubmit, onClose }) {
+  const [icon, setIcon] = useState(prefill ? "🥛" : "📦");
+  return <form className="product-form" onSubmit={onSubmit}><label className="full-field">Nombre del producto<input name="productName" placeholder="Ej. Yogurt natural" defaultValue={prefill ? "Yogurt natural" : ""} required /></label><div className="full-field product-icon-field"><span className="field-label">Ícono</span><ProductIconPicker value={icon} onChange={setIcon} /></div><label>Categor&iacute;a<select name="category" defaultValue="Abarrotes"><option>Abarrotes</option><option>L&aacute;cteos</option><option>Frutas</option><option>Bebidas</option><option>Limpieza</option><option>Otros</option></select></label><label>Cantidad<div className="input-with-suffix"><input name="quantity" type="number" min="1" defaultValue={prefill ? "6" : ""} placeholder="0" required /><select name="unit" aria-label="Unidad"><option>unid.</option><option>kg</option><option>paq.</option><option>caja</option><option>litro</option></select></div></label><label>Precio de venta<div className="input-with-prefix"><span>S/</span><input name="price" type="number" min="0" step="0.10" placeholder="0.00" /></div></label><label>Fecha de vencimiento<input name="expires" type="date" /></label><p className="modal-prototype-note" /><div className="modal-actions"><button type="button" className="button button-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="button button-primary">Guardar en inventario</button></div></form>;
+}
