@@ -5,3 +5,5 @@ temp/
 # Node dependencies (includes apps/operations-web/node_modules)
 node_modules/
 **/node_modules/
+dist/
+**/dist/
