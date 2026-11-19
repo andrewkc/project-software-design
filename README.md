@@ -1,31 +1,58 @@
-# SDD Documentation Starter — Gestión interna de bodegas
+# BodeSmart
 
-Versión inicial estructurada a partir del README autocontenido **Entregable 1 — Modelado del negocio**. Incluye el modelo de negocio, las tres respuestas de entrevistas, nueve casos de uso, ocho entidades, nueve reglas, trazabilidad y diagramas Mermaid.
+BodeSmart es una propuesta de aplicación para bodegas y minimarkets de barrio. Busca reemplazar el control de existencias en papel, tickets y memoria por registros sencillos y consultables.
 
-**Importante:** esta documentación describe una propuesta de MVP; no acredita que el software esté implementado. La arquitectura técnica, stack, base de datos, despliegue, proveedor/modelo de IA y métricas no funcionales siguen pendientes.
+El trabajo se apoya en entrevistas exploratorias. Esas entrevistas describen el problema, pero no demuestran que la herramienta reduzca pérdidas ni que sus recomendaciones sean acertadas. Esta documentación describe un MVP propuesto, no un producto terminado.
 
-## Estructura
-- `AGENTS.md`: instrucciones comunes para asistentes de IA.
-- `.agents/skills/sdd-documentation-architect/`: procedimiento SDD reutilizable.
-- `docs/00-governance/`: constitución, flujo, glosario e inventario.
-- `docs/01-product/`: visión, alcance y roadmap.
-- `docs/02-business/`: organización, entrevistas, actores, trabajadores, casos, entidades, reglas, diagramas y trazabilidad.
-- `docs/03-requirements/`: requisitos funcionales iniciales, NFR pendientes y preguntas abiertas.
-- `docs/04-architecture/`: modelo de dominio y diagramas.
-- `docs/05-specifications/`: plantillas de spec, plan y tasks.
-- `docs/06-quality/`: áreas de validación.
-- `docs/07-evidence/`: entrevistas en Markdown/CSV y README fuente.
-- `templates/`: plantillas ADR y requisitos.
+## El problema
 
-## Inicio recomendado
-1. Leer `AGENTS.md` y `docs/00-governance/constitution.md`.
-2. Revisar visión, alcance y modelo de negocio.
-3. Resolver preguntas abiertas antes de fijar decisiones técnicas.
-4. Para cada funcionalidad, crear una especificación desde `docs/05-specifications/_feature-template/`.
-5. Mantener trazabilidad entre spec, requisitos, reglas, entidades, pruebas e implementación.
+Las bodegas entrevistadas no saben con certeza qué stock tienen. Los ingresos se anotan en cuadernos o documentos, las salidas se recuerdan o se apoyan en tickets, y los vencimientos se revisan de forma informal. Cuando aparece un problema, cuesta saber quién registró cada movimiento.
 
-## Etiquetas de certeza
-- **Confirmado:** explícito en la fuente.
-- **Derivado:** consecuencia directa de información confirmada.
-- **Propuesto:** recomendación aún no aprobada.
-- **Pendiente:** la fuente no lo define.
+## Lo que propone BodeSmart
+
+- Registrar entradas de mercadería ya recibida y salidas por venta o merma.
+- Consultar inventario, existencias por lote y fechas de vencimiento.
+- Identificar al responsable de cada movimiento.
+- Supervisar el trabajo del personal desde una sola vista.
+- Definir precios y promociones de uso interno.
+- Recibir sugerencias de reposición y descuentos, siempre sujetas a la decisión del jefe.
+
+La IA apoya la decisión. Nunca aprueba promociones, genera compras ni modifica el inventario por su cuenta.
+
+## Quiénes lo usan
+
+**Jefe de bodega.** Ve y administra toda su bodega. Puede bloquear filas, desactivar productos sin borrar el historial, fijar precios y aprobar promociones o sugerencias.
+
+**Empleado.** Trabaja solo en la bodega asignada. Registra entradas y salidas, edita únicamente las filas que creó y no puede eliminarlas ni desactivarlas.
+
+**Administrador interno.** Perfil previsto para la app de administración. Gestiona altas, cambios y bajas de cuentas de jefes, empleados y clientes. Esta app está planificada y aún no está implementada.
+
+**Comprador.** Destinatario de la tienda pública prevista. Queda fuera del MVP documentado.
+
+## Las aplicaciones previstas
+
+| App | Dominio | Estado |
+| --- | --- | --- |
+| operations-web | app.bodesmart.com | Prototipo actual para jefe y empleado |
+| admin-web | admin.bodesmart.com | Planificada, sin implementar |
+| customer-web | bodesmart.com | Planificada, fuera del MVP |
+| backend | No expuesto públicamente | Planificada, sin implementar |
+| database | No expuesto públicamente | Planificada, sin implementar |
+
+El prototipo de operations-web ya cubre el registro de productos, el inventario con ID por fila, el bloqueo y la desactivación, la creación de empleados con contraseña generada y la persistencia de perfiles en SQLite dentro del navegador. Las reglas de roles, propiedad y bloqueo, y la persistencia en SQLite están registradas como decisiones propuestas y aplicadas al prototipo. No son requisitos aprobados para producción.
+
+## Lo que queda fuera del MVP
+
+No se incluyen proveedores, pagos, facturación electrónica, entregas, contabilidad, estimación de vida útil por IA ni vista de compradores. El prototipo muestra pantallas de ejemplo para registro por foto, código, texto y voz, pero esas modalidades no forman parte del MVP documentado.
+
+## Cómo se construye la documentación
+
+Trabajamos por funcionalidad con el ciclo Descubrir, Especificar, Revisar, Planear, Tareas, Implementar, Validar y Aprender. Cada funcionalidad mantiene trazabilidad entre casos de uso, requisitos, reglas de negocio, entidades, pruebas y código.
+
+Las afirmaciones se etiquetan como confirmadas, derivadas, propuestas o pendientes. Ante una contradicción, se registra como pregunta abierta o decisión de arquitectura. No se decide en silencio.
+
+## Estado de certeza
+
+- Confirmado: lo que dicen las entrevistas y la fuente original.
+- Propuesto: reglas de roles, propiedad y bloqueo, y persistencia de perfiles en SQLite. Aplicadas solo al prototipo.
+- Pendiente: arquitectura de producción, despliegue, proveedor de IA, métricas no funcionales y varias preguntas de negocio todavía abiertas.
