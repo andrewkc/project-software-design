@@ -1,5 +1,9 @@
 # BodeSmart
 
+<p align="center">
+  <img src="apps/operations-web/src/assets/BodeSmart-Logo.png" alt="Logo de BodeSmart" width="320">
+</p>
+
 BodeSmart es una propuesta de aplicación para bodegas y minimarkets de barrio. Busca reemplazar el control de existencias en papel, tickets y memoria por registros sencillos y consultables.
 
 El trabajo se apoya en entrevistas exploratorias. Esas entrevistas describen el problema, pero no demuestran que la herramienta reduzca pérdidas ni que sus recomendaciones sean acertadas. Esta documentación describe un MVP propuesto, no un producto terminado.
