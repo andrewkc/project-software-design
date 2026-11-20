@@ -1,6 +1,6 @@
-# BodegaSmart - prototipo frontend
+# BodegaSmart — prototipo frontend de operaciones
 
-Prototipo adaptable a escritorio y móvil para la gestión interna de una bodega. Incluye un flujo de creación de cuenta, panel principal, catálogo local de productos, alertas de vencimiento, hallazgos de entrevistas y cuatro maneras de iniciar el registro de mercadería.
+Prototipo adaptable a escritorio y móvil para la gestión interna de una bodega. Es la app que usan el **jefe** y el **empleado** en `app.bodesmart.com`. Toda la información se guarda en el navegador: los perfiles en SQLite dentro del navegador (`sql.js`) y el resto en `localStorage`. No hay backend conectado todavía.
 
 ## Ejecutar
 
@@ -17,15 +17,25 @@ Para comprobar la compilación de producción:
 npm run build
 ```
 
-## Qué incluye
+## Cómo funciona
 
-- Registro de usuario y nombre del negocio; la información de demostración se guarda en el almacenamiento local del navegador.
-- Inventario de muestra, búsqueda de productos y alta de productos con cantidad, unidad, precio y vencimiento.
-- Alertas calculadas a partir de las fechas ingresadas y propuestas demostrativas de descuento/stock que la persona puede revisar, ajustar o descartar.
-- Flujos demostrativos de foto, voz, escritura y código de barras. El navegador permite elegir/tomar una foto; voz, escaneo, análisis de imágenes y predicciones de IA no están conectados a servicios reales. La propuesta de precio es ilustrativa (10 % menos que el precio de muestra) y no modifica precios ni promociones reales.
-- Pantalla de hallazgos: control de memoria o papel, dificultad para registrar ventas, pérdidas por vencimiento y necesidad de identificar a la persona que hizo cada movimiento.
-- Oportunidad para validar en futuras entrevistas: documentar productos vencidos/deteriorados y los reclamos de devolución al proveedor. La gestión de proveedores no está en el MVP descrito en el modelo de negocio.
+- **Acceso:** registro de jefe con nombres y apellidos separados, e inicio de sesión con correo y contraseña. El jefe crea cuentas de empleado con una contraseña inicial generada, puede revocar el acceso y permite al empleado cambiar su contraseña. Revocar conserva el historial y bloquea las filas del empleado.
+- **Roles:** el jefe edita cualquier fila, incluidas las bloqueadas, y puede bloquear, desactivar y reactivar productos sin borrarlos. El empleado edita solo filas activas, desbloqueadas y creadas por él, incluido precio y stock, y accede únicamente a su bodega asignada.
+- **Inventario:** alta de productos con icono emoji, búsqueda, ID por fila, autor de cada registro y edición en línea. Toda edición directa de stock deja un movimiento de ajuste con responsable y valores anterior y nuevo.
+- **Alertas y sugerencias:** vencimientos calculados desde las fechas ingresadas y propuestas demostrativas de descuento y reposición que la persona puede revisar, ajustar o descartar. La IA solo apoya la decisión; nunca aprueba por sí sola ni modifica el inventario.
+- **Registro de mercadería:** flujos demostrativos de foto, voz, escritura y código de barras. El navegador permite elegir o tomar una foto; voz, escaneo, análisis de imágenes y predicciones de IA no están conectados a servicios reales.
+- **Hallazgos:** pantalla con control de memoria o papel, dificultad para registrar ventas, pérdidas por vencimiento y necesidad de identificar al responsable de cada movimiento.
 
-El archivo `Entrevistas.csv` no se encontró entre los archivos disponibles en el espacio de trabajo. Los hallazgos mostrados se basan en la descripción de entrevistas incluida en `Modelo_Negocio.docx` y en el problema adicional de devoluciones indicado por el equipo; deben contrastarse con las respuestas originales.
+Las decisiones de roles, propiedad y bloqueo, y la persistencia de perfiles son propuestas aplicadas al prototipo, no requisitos aprobados para producción. Las entrevistas son exploratorias: el prototipo no demuestra reducción de pérdidas ni efectividad de la IA.
 
-Este prototipo no reemplaza un sistema de inventario de producción. No hay autenticación real, backend, procesamiento automático de entradas, registro de ventas/mermas ni historial de auditoría.
+## Referencias
+
+- [Visión del producto](../../docs/01-product/vision.md)
+- [Alcance del MVP](../../docs/01-product/scope.md)
+- [Requisitos funcionales RF-15 a RF-22](../../docs/03-requirements/functional-requirements.md)
+- [Casos de uso CU-01 a CU-09](../../docs/02-business/use-cases/README.md)
+- [Reglas de negocio RN-10 y RN-11](../../docs/02-business/business-rules.md)
+- [ADR-001 Roles, propiedad de filas y candado](../../docs/04-architecture/decisions/ADR-001-roles-propiedad-bloqueo.md)
+- [ADR-002 Persistencia de perfiles con SQLite](../../docs/04-architecture/decisions/ADR-002-persistencia-perfiles-sqlite.md)
+- [Preguntas abiertas](../../docs/03-requirements/open-questions.md)
+- [README raíz](../../README.md)

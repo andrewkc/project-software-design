@@ -40,7 +40,7 @@ La IA apoya la decisión. Nunca aprueba promociones, genera compras ni modifica 
 | operations-web | app.bodesmart.com | Prototipo actual para jefe y empleado |
 | admin-web | admin.bodesmart.com | Planificada, sin implementar |
 | customer-web | bodesmart.com | Planificada, fuera del MVP |
-| backend | No expuesto públicamente | Planificada, sin implementar |
+| backend | No expuesto públicamente | Primer corte en curso: auth, perfiles, productos y movimientos |
 | database | No expuesto públicamente | Planificada, sin implementar |
 
 El prototipo de operations-web ya cubre el registro de productos, el inventario con ID por fila, el bloqueo y la desactivación, la creación de empleados con contraseña generada y la persistencia de perfiles en SQLite dentro del navegador. Las reglas de roles, propiedad y bloqueo, y la persistencia en SQLite están registradas como decisiones propuestas y aplicadas al prototipo. No son requisitos aprobados para producción.
