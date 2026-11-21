@@ -1,0 +1,165 @@
+{
+  "all_scenarios_safe": true,
+  "expected_unsold_no_worse": true,
+  "model_sha256": "42d238d316f63715fd7656b1a2272b05d24a298be8d55a3d654614166f011115",
+  "model_state": "EXPERIMENTAL",
+  "scenarios": [
+    {
+      "limitation": "synthetic counterfactual expectation, not observed waste or causal evidence",
+      "method": "one day-2 snapshot per first-closing lot; expected Poisson means with fixed history and common latent-demand equation",
+      "model_discount_actions": 1,
+      "model_expected_unsold_no_worse_than_hold": true,
+      "price_violations": 0,
+      "scenarios": 31,
+      "seed": 42,
+      "totals": {
+        "expiry_rule": {
+          "margin": 499.31,
+          "revenue": 1346.55,
+          "unsold": 0.85
+        },
+        "hold": {
+          "margin": 557.58,
+          "revenue": 1402.01,
+          "unsold": 1.25
+        },
+        "model": {
+          "margin": 547.77,
+          "revenue": 1394.31,
+          "unsold": 0.97
+        }
+      }
+    },
+    {
+      "limitation": "synthetic counterfactual expectation, not observed waste or causal evidence",
+      "method": "one day-2 snapshot per first-closing lot; expected Poisson means with fixed history and common latent-demand equation",
+      "model_discount_actions": 1,
+      "model_expected_unsold_no_worse_than_hold": true,
+      "price_violations": 0,
+      "scenarios": 40,
+      "seed": 43,
+      "totals": {
+        "expiry_rule": {
+          "margin": 459.08,
+          "revenue": 1616.34,
+          "unsold": 0.0
+        },
+        "hold": {
+          "margin": 553.55,
+          "revenue": 1710.81,
+          "unsold": 0.0
+        },
+        "model": {
+          "margin": 551.03,
+          "revenue": 1708.29,
+          "unsold": 0.0
+        }
+      }
+    },
+    {
+      "limitation": "synthetic counterfactual expectation, not observed waste or causal evidence",
+      "method": "one day-2 snapshot per first-closing lot; expected Poisson means with fixed history and common latent-demand equation",
+      "model_discount_actions": 4,
+      "model_expected_unsold_no_worse_than_hold": true,
+      "price_violations": 0,
+      "scenarios": 33,
+      "seed": 44,
+      "totals": {
+        "expiry_rule": {
+          "margin": 547.02,
+          "revenue": 1457.61,
+          "unsold": 5.76
+        },
+        "hold": {
+          "margin": 642.12,
+          "revenue": 1540.5,
+          "unsold": 8.83
+        },
+        "model": {
+          "margin": 620.31,
+          "revenue": 1527.24,
+          "unsold": 6.76
+        }
+      }
+    },
+    {
+      "limitation": "synthetic counterfactual expectation, not observed waste or causal evidence",
+      "method": "one day-2 snapshot per first-closing lot; expected Poisson means with fixed history and common latent-demand equation",
+      "model_discount_actions": 0,
+      "model_expected_unsold_no_worse_than_hold": true,
+      "price_violations": 0,
+      "scenarios": 35,
+      "seed": 45,
+      "totals": {
+        "expiry_rule": {
+          "margin": 576.1,
+          "revenue": 1779.46,
+          "unsold": 10.29
+        },
+        "hold": {
+          "margin": 702.71,
+          "revenue": 1899.36,
+          "unsold": 11.67
+        },
+        "model": {
+          "margin": 702.71,
+          "revenue": 1899.36,
+          "unsold": 11.67
+        }
+      }
+    },
+    {
+      "limitation": "synthetic counterfactual expectation, not observed waste or causal evidence",
+      "method": "one day-2 snapshot per first-closing lot; expected Poisson means with fixed history and common latent-demand equation",
+      "model_discount_actions": 1,
+      "model_expected_unsold_no_worse_than_hold": true,
+      "price_violations": 0,
+      "scenarios": 37,
+      "seed": 46,
+      "totals": {
+        "expiry_rule": {
+          "margin": 417.29,
+          "revenue": 1318.45,
+          "unsold": 0.0
+        },
+        "hold": {
+          "margin": 482.21,
+          "revenue": 1383.37,
+          "unsold": 0.0
+        },
+        "model": {
+          "margin": 479.9,
+          "revenue": 1381.06,
+          "unsold": 0.0
+        }
+      }
+    },
+    {
+      "limitation": "synthetic counterfactual expectation, not observed waste or causal evidence",
+      "method": "one day-2 snapshot per first-closing lot; expected Poisson means with fixed history and common latent-demand equation",
+      "model_discount_actions": 1,
+      "model_expected_unsold_no_worse_than_hold": true,
+      "price_violations": 0,
+      "scenarios": 38,
+      "seed": 47,
+      "totals": {
+        "expiry_rule": {
+          "margin": 539.5,
+          "revenue": 1482.04,
+          "unsold": 7.24
+        },
+        "hold": {
+          "margin": 644.19,
+          "revenue": 1578.03,
+          "unsold": 8.95
+        },
+        "model": {
+          "margin": 642.65,
+          "revenue": 1578.76,
+          "unsold": 8.47
+        }
+      }
+    }
+  ],
+  "status": "OFFLINE_SYNTHETIC_EVALUATION_ONLY"
+}

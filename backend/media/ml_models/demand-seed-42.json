@@ -1,0 +1,95 @@
+{
+  "artifact": "demand-seed-42.joblib",
+  "artifact_sha256": "42d238d316f63715fd7656b1a2272b05d24a298be8d55a3d654614166f011115",
+  "calibration_sha256": "6706832db892bbae4969c19d87e07975d2543d2ba7d7d4756360654785de5a3d",
+  "dataset_version": "synthetic-demand-v3-freshretail-calibrated",
+  "demand_quality_gate": true,
+  "evaluation": {
+    "stress_seed_43": {
+      "baseline_mae": 1.9544,
+      "model_mae": 1.6873,
+      "rows": 432
+    },
+    "stress_seed_44": {
+      "baseline_mae": 2.1048,
+      "model_mae": 1.8254,
+      "rows": 432
+    },
+    "stress_seed_45": {
+      "baseline_mae": 2.0771,
+      "model_mae": 1.9055,
+      "rows": 432
+    },
+    "stress_seed_46": {
+      "baseline_mae": 1.9266,
+      "model_mae": 1.7955,
+      "rows": 432
+    },
+    "stress_seed_47": {
+      "baseline_mae": 1.997,
+      "model_mae": 1.8272,
+      "rows": 432
+    },
+    "test_all": {
+      "baseline_mae": 2.2097,
+      "model_mae": 1.648,
+      "rows": 432
+    },
+    "test_seen": {
+      "baseline_mae": 2.3226,
+      "model_mae": 1.6225,
+      "rows": 252
+    },
+    "test_unseen_product": {
+      "baseline_mae": 2.877,
+      "model_mae": 1.9524,
+      "rows": 36
+    },
+    "test_unseen_store": {
+      "baseline_mae": 1.8452,
+      "model_mae": 1.6164,
+      "rows": 144
+    },
+    "validation_seen": {
+      "baseline_mae": 2.0142,
+      "model_mae": 1.5534,
+      "rows": 252
+    }
+  },
+  "feature_fields": [
+    "store_id",
+    "category",
+    "price_ratio",
+    "current_price",
+    "days_to_close",
+    "stock_steps",
+    "weekday",
+    "lot_age_days",
+    "lag7_sales_sum",
+    "lag7_days",
+    "lag14_sales_sum",
+    "lag14_days"
+  ],
+  "features_version": "demand-features-v1",
+  "model_parameters": {
+    "l2_regularization": 1.0,
+    "learning_rate": 0.05,
+    "loss": "poisson",
+    "max_iter": 250,
+    "max_leaf_nodes": 15,
+    "min_samples_leaf": 10,
+    "monotonic_price_features": [
+      "price_ratio",
+      "current_price"
+    ]
+  },
+  "monotonic_price_violations": 0,
+  "rows_fit": 756,
+  "seed": 42,
+  "state": "EXPERIMENTAL",
+  "trained_at_utc": "2026-11-06T01:22:36.715569+00:00",
+  "versions": {
+    "numpy": "2.5.4",
+    "scikit_learn": "1.9.1"
+  }
+}
