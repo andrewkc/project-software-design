@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { apiGet, apiPost } from "./api";
+import { apiGet, apiPatch, apiPost } from "./api";
+import AdminPanel from "./AdminPanel";
 import "./store-panel.css";
 
 const newKey = () => crypto.randomUUID();
@@ -32,6 +33,7 @@ export default function StorePanel({ onExit }) {
   const [offers, setOffers] = useState([]);
   const [movements, setMovements] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
   const [pricingPolicy, setPricingPolicy] = useState(null);
   const [autoConsent, setAutoConsent] = useState(false);
   const [message, setMessage] = useState("");
@@ -42,10 +44,11 @@ export default function StorePanel({ onExit }) {
   useEffect(() => setAutoConsent(false), [pricingPolicy?.mode]);
 
   const reload = useCallback(async (includeRecommendations = false) => {
-    const [nextProducts, nextLots, nextOffers, nextMovements, nextRecommendations, nextPolicy] = await Promise.all([
+    const [nextProducts, nextLots, nextOffers, nextMovements, nextRecommendations, nextPolicy, nextStaff] = await Promise.all([
       apiGet("/store/products"), apiGet("/store/lots"), apiGet("/store/offers"), apiGet("/store/movements"),
       includeRecommendations ? apiGet("/store/recommendations") : Promise.resolve([]),
       includeRecommendations ? apiGet("/store/pricing-policy") : Promise.resolve(null),
+      includeRecommendations ? apiGet("/store/staff") : Promise.resolve([]),
     ]);
     setProducts(nextProducts);
     setLots(nextLots);
@@ -53,6 +56,7 @@ export default function StorePanel({ onExit }) {
     setMovements(nextMovements);
     setRecommendations(nextRecommendations);
     setPricingPolicy(nextPolicy);
+    setStaffMembers(nextStaff);
   }, []);
 
   useEffect(() => {
@@ -99,6 +103,8 @@ export default function StorePanel({ onExit }) {
   const owner = user?.role === "OWNER";
   const staff = owner || user?.role === "EMPLOYEE";
 
+  if (user?.role === "ADMIN") return <AdminPanel user={user} onExit={onExit} onLogout={logout} />;
+
   return <div className="ops-shell">
     <header className="ops-header"><div><strong>BodeSmart</strong><span> Gestión de bodega</span></div><div>{user && <span>{user.name} · {owner ? "Dueño" : user.role === "EMPLOYEE" ? "Empleado" : user.role}</span>}{user && <button type="button" onClick={logout}>Salir de cuenta</button>}<button type="button" onClick={onExit}>Volver a compras</button></div></header>
     <main className="ops-main">
@@ -108,6 +114,7 @@ export default function StorePanel({ onExit }) {
       {message && <p className="ops-message" role="status">{message}</p>}
       {staff && <>
         <section className="ops-intro"><h1>Inventario de tu bodega</h1><p>Los saldos y movimientos provienen de PostgreSQL. La venta presencial descuenta primero los lotes aptos más próximos a cerrar.</p></section>
+        {owner && <section className="ops-card"><h2>Personal de la bodega</h2><form className="ops-form-grid" onSubmit={(event) => { event.preventDefault(); run(() => apiPost("/store/staff", values(event)), "Empleado creado."); event.currentTarget.reset(); }}><Field label="Nombre" name="name" /><Field label="Correo" name="email" type="email" /><Field label="Contraseña inicial" name="password" type="password" minLength="8" /><button disabled={busy}>Agregar empleado</button></form><div className="ops-table-wrap"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{staffMembers.map((member) => <tr key={member.id}><td>{member.name}</td><td>{member.email}</td><td>{member.active ? "Activo" : "Inactivo"}</td><td><button type="button" disabled={busy} onClick={() => run(() => apiPatch(`/store/staff/${member.id}`, { active: !member.active }), "Estado del empleado actualizado.")}>{member.active ? "Desactivar" : "Reactivar"}</button></td></tr>)}</tbody></table></div></section>}
         <section className="ops-card"><h2>Consulta tu inventario</h2><p>Pregunta por existencias, lotes o vencimientos de tu bodega. El asistente solo puede consultar datos.</p><form onSubmit={async (event) => { event.preventDefault(); setChatBusy(true); try { setChatReply((await apiPost("/chat", { question: values(event).question })).answer); } catch (error) { setChatReply(error.message); } finally { setChatBusy(false); } }}><label className="ops-field">Pregunta<input name="question" maxLength="1000" placeholder="¿Qué lotes vencen pronto?" required /></label><button disabled={chatBusy}>{chatBusy ? "Consultando…" : "Consultar"}</button></form>{chatReply && <p role="status">{chatReply}</p>}</section>
         <section className="ops-grid">
           {owner && <ActionForm title="Nuevo producto" disabled={busy} onSubmit={(event) => { event.preventDefault(); run(() => apiPost("/store/products", values(event)), "Producto creado."); event.currentTarget.reset(); }}>

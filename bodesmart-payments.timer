@@ -1,0 +1,10 @@
+[Unit]
+Description=Check BodeSmart test payments each minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=true
+Unit=bodesmart-payments.service
+
+[Install]
+WantedBy=timers.target

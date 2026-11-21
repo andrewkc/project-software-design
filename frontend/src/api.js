@@ -30,3 +30,20 @@ export async function apiPost(path, data = {}, fetcher = fetch) {
   return response.status === 204 ? null : response.json();
 }
 
+export async function apiPatch(path, data = {}, fetcher = fetch) {
+  const csrfResponse = await fetcher("/api/v1/auth/csrf", { credentials: "same-origin" });
+  if (!csrfResponse.ok) throw new Error("No se pudo preparar la sesión segura");
+  const { csrf_token: csrfToken } = await csrfResponse.json();
+  const response = await fetcher(`/api/v1${path}`, {
+    method: "PATCH",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error?.message || `API ${response.status}`);
+  }
+  return response.json();
+}
+

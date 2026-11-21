@@ -3,9 +3,9 @@ import React from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StorePanel from "./StorePanel";
-import { apiGet, apiPost } from "./api";
+import { apiGet, apiPatch, apiPost } from "./api";
 
-vi.mock("./api", () => ({ apiGet: vi.fn(), apiPost: vi.fn() }));
+vi.mock("./api", () => ({ apiGet: vi.fn(), apiPatch: vi.fn(), apiPost: vi.fn() }));
 
 const owner = { id: "o1", name: "Dueño", role: "OWNER", store_id: "s1" };
 const employee = { id: "e1", name: "Empleado", role: "EMPLOYEE", store_id: "s1" };
@@ -22,6 +22,7 @@ function mockSession(user) {
     if (path === "/store/lots") return [user.role === "OWNER" ? lot : (({ total_cost, ...publicLot }) => publicLot)(lot)];
     if (path === "/store/offers") return [user.role === "OWNER" ? offer : (({ limit, ...publicOffer }) => publicOffer)(offer)];
     if (path === "/store/movements") return [];
+    if (path === "/store/staff") return [];
     if (path === "/store/recommendations") return [];
     if (path === "/store/pricing-policy") return { mode: "REVIEW", version: 1 };
     throw new Error(`Unexpected ${path}`);
@@ -120,6 +121,7 @@ test("owner can approve a pending recommendation", async () => {
     if (path === "/store/lots") return [lot];
     if (path === "/store/offers") return [offer];
     if (path === "/store/movements") return [];
+    if (path === "/store/staff") return [];
     if (path === "/store/pricing-policy") return { mode: "REVIEW", version: 1 };
     throw new Error(`Unexpected ${path}`);
   });

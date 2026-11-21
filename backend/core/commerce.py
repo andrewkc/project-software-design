@@ -111,6 +111,10 @@ def create_order(actor, data):
     store_ids = {offer.lot.product.store_id for offer in offers.values()}
     if len(store_ids) != 1:
         raise services.DomainError("MIXED_STORES", "El pedido debe ser de una sola bodega")
+    # Serialize order creation with administrative store deactivation.
+    store = Store.objects.select_for_update().get(pk=next(iter(store_ids)))
+    if not store.active:
+        raise services.DomainError("OFFER_UNAVAILABLE", "La bodega no está disponible", 409)
     total = Decimal("0.00")
     expiry = now + timedelta(minutes=10)
     details = []

@@ -73,9 +73,19 @@ Cada pregunta recupera datos actuales de PostgreSQL: ofertas públicas para comp
 
 ## Despliegue de demo en AWS
 
+La pantalla **Gestión de bodega** permite al administrador crear o desactivar bodegas y cuentas; el dueño puede agregar, desactivar y reactivar empleados de su propia bodega. Los cambios conservan la auditoría. No se desactiva una bodega con reservas activas ni el último administrador.
+
+El pago de prueba se verifica siempre consultando la order de Mercado Pago. Para recibir avisos, configura en **Webhooks → Prueba** el evento **Order (Mercado Pago)** y la URL `https://bodesmart.shop/api/v1/payments/webhook`. Guarda la firma secreta en `MERCADOPAGO_WEBHOOK_SECRET` dentro del `.env` privado del servidor. Sin esa firma, el endpoint rechaza las notificaciones. El proceso `python manage.py run_payment_reconciliation` procesa avisos firmados y revisa pedidos pendientes aunque el comprador cierre la página. En AWS, `bodesmart-payments.service` y `bodesmart-payments.timer` lo programan cada minuto; el timer se instala con `sudo cp bodesmart-payments.{service,timer} /etc/systemd/system/`, `sudo systemctl daemon-reload` y `sudo systemctl enable --now bodesmart-payments.timer`.
+
+Para conservar la demo, `python3 scripts/demo_snapshot.py backup /ruta/privada/snapshot` guarda PostgreSQL y los archivos de `backend/media`, incluidos el modelo y las fotos si existen. `python3 scripts/demo_snapshot.py verify /ruta/privada/snapshot` comprueba hashes y restaura la base en una base temporal separada, verifica que existan bodegas, cuentas y lotes, y la elimina al terminar. La carpeta de copias debe mantenerse privada y fuera de Git. El proceso de verificación nunca reemplaza la base en uso.
+
+Para probar desde una descarga limpia sin claves externas, `docker compose -f compose.test.yaml up -d web frontend` levanta la demo aislada en `http://127.0.0.1:55123`. Ejecuta una sola vez `docker compose -f compose.test.yaml exec -T web python manage.py migrate` y `docker compose -f compose.test.yaml exec -T web python manage.py seed_demo`. La contraseña exclusivamente local de las cuentas `@demo.example` en este entorno de ensayo es `LocalDemoPass123!`. Las pruebas completas se ejecutan con `docker compose -f compose.test.yaml run --rm tests`; las del navegador con `cd frontend`, `npm ci` y `npm run test:e2e`. Este entorno no llama a Mercado Pago ni Gemini.
+
 `compose.production.yaml` prepara PostgreSQL, Django con Gunicorn y React servido por Caddy. Solo Caddy publica los puertos 80 y 443; obtiene HTTPS automáticamente cuando `bodesmart.shop` apunta a la IP pública del servidor. `.dockerignore` excluye las claves y datos locales de las imágenes. Copia los campos de `.env.production.example` a un `.env` privado del servidor y reemplaza las contraseñas y claves de ejemplo. El despliegue exige `DJANGO_SECRET_KEY` y `POSTGRES_PASSWORD` no vacíos. Mantén las credenciales de Mercado Pago en ambiente de prueba.
 
 Al desplegar por primera vez, ejecuta `docker compose -f compose.production.yaml up -d --build`; las migraciones y los archivos estáticos se preparan al iniciar Django. Después, genera el modelo experimental con `docker compose -f compose.production.yaml exec web python manage.py train_ml_demo` y crea las tiendas de muestra con `docker compose -f compose.production.yaml exec web python manage.py seed_demo`. Los datos de PostgreSQL, el modelo y los certificados TLS quedan en volúmenes persistentes. El registro DNS `@` debe apuntar a la IP elástica de la instancia y `www` debe ser un CNAME de `bodesmart.shop`.
+
+Antes de ejecutar Playwright por primera vez, instala su navegador con `npx playwright install chromium` dentro de `frontend/`. Si Chrome ya está instalado, puedes usar `PLAYWRIGHT_CHANNEL=chrome` en lugar de descargar Chromium.
 
 ## Subfase 4.1: datos sintéticos y evaluación
 
@@ -104,7 +114,7 @@ FreshRetailNet no publica precio absoluto, costo, lote, vencimiento ni demanda s
 .\.venv\Scripts\python.exe backend\manage.py train_ml_demo
 ```
 
-El comando entrena `HistGradientBoostingRegressor` con pérdida Poisson en CPU, usando solo los días de entrenamiento de tiendas/productos conocidos. Usa tienda y categoría, pero omite el identificador de producto para generalizar mejor; las ventas anteriores conservan señal de cada producto. Deja la validación y la prueba temporal fuera del ajuste, evalúa además una tienda y un producto no vistos y repite la prueba con semillas 43 a 47. Compara MAE contra la media observada de 7 días y verifica que subir el precio no aumente la predicción. Guarda el modelo y su informe JSON con hash SHA-256 en `backend/media/ml_models/`, ignorado por Git. La carga comprueba el hash y la versión de scikit-learn; solo deben cargarse artefactos locales de confianza.
+El comando entrena `HistGradientBoostingRegressor` con pérdida Poisson en CPU, usando solo los días de entrenamiento de tiendas/productos conocidos. Usa tienda y categoría, pero omite el identificador de producto para generalizar mejor; las ventas anteriores conservan señal de cada producto. Deja la validación y la prueba temporal fuera del ajuste, evalúa además una tienda y un producto no vistos y repite la prueba con semillas 43 a 47. Compara MAE contra la media observada de 7 días y verifica que subir el precio no aumente la predicción. Guarda el modelo y su informe JSON con hash SHA-256 en `backend/media/ml_models/`, cuyos tres artefactos se versionan en Git. La carga comprueba el hash y la versión de scikit-learn; solo deben cargarse artefactos locales de confianza.
 
 El estado permanece `EXPERIMENTAL`: este entrenamiento valida predicción de **demanda sintética**, pero no demuestra resultados con ventas reales.
 

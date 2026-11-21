@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import InventoryMovement, Lot, Offer, OfferLimit, Order, Product, Store, User
-from . import chat, commerce, payments, pricing_service, services
+from . import accounts, chat, commerce, payments, pricing_service, services
 
 
 def user_payload(user):
@@ -72,6 +72,51 @@ def stores(request):
     data = [{"id": str(store.id), "name": store.name, "address": store.address, "opening_hours": store.opening_hours}
             for store in Store.objects.filter(active=True).order_by("name")]
     return Response(data)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def admin_stores(request):
+    if request.method == "POST":
+        return _execute(lambda: accounts.create_store(request.user, request.data), accounts.store_payload, 201)
+    return _execute(lambda: accounts.list_stores(request.user),
+                    lambda items: [accounts.store_payload(item) for item in items])
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def admin_store(request, store_id):
+    return _execute(lambda: accounts.update_store(request.user, store_id, request.data), accounts.store_payload)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def admin_users(request):
+    if request.method == "POST":
+        return _execute(lambda: accounts.create_user(request.user, request.data), accounts.user_payload, 201)
+    return _execute(lambda: accounts.list_users(request.user),
+                    lambda items: [accounts.user_payload(item) for item in items])
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def admin_user(request, user_id):
+    return _execute(lambda: accounts.update_user(request.user, user_id, request.data), accounts.user_payload)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def store_staff(request):
+    if request.method == "POST":
+        return _execute(lambda: accounts.create_user(request.user, request.data, staff_only=True), accounts.user_payload, 201)
+    return _execute(lambda: accounts.list_staff(request.user),
+                    lambda items: [accounts.user_payload(item) for item in items])
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def store_staff_member(request, user_id):
+    return _execute(lambda: accounts.update_user(request.user, user_id, request.data, staff_only=True), accounts.user_payload)
 
 
 @api_view(["POST"])
@@ -165,6 +210,13 @@ def checkout(request, order_id):
 @permission_classes([IsAuthenticated])
 def verify_payment(request, order_id):
     return _execute(lambda: payments.verify_checkout(request.user, order_id), commerce.order_payload)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def payment_webhook(request):
+    return _execute(lambda: payments.accept_webhook(request.data, request.headers,
+                                                     request.query_params.get("data.id")))
 
 
 @api_view(["POST"])
