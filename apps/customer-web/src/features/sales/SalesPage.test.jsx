@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { SalesPage } from "./SalesPage";
 import { LayoutContext } from "../../components/layout/LayoutContext";
@@ -76,6 +76,42 @@ test("si el dictado es ambiguo pide elegir el producto", () => {
   expect(screen.queryByLabelText("Cantidad de Leche Gloria")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Elegir Leche chocolatada" }));
   expect(screen.getByLabelText("Cantidad de Leche chocolatada").value).toBe("2");
+});
+
+describe("pedidos de clientes", () => {
+  const pending = [{ id: "ped-1", store: "Bodega San Martín", clienteId: "cli-1", clienteNombre: "Diego Paz", creadoEn: "2026-11-24T15:00:00.000Z", estado: "pendiente", total: 9, lineas: [{ productoId: 1, productoNombre: "Leche Gloria", cantidad: 2, unidad: "unid.", precio: 4.5, subtotal: 9 }] }];
+
+  test("sin pedidos pendientes no aparece la sección", () => {
+    renderPage({ pendingOrders: [] });
+    expect(screen.queryByRole("region", { name: "Pedidos de clientes" })).toBeNull();
+  });
+
+  test("muestra el pedido y lo acepta como venta", () => {
+    const onAcceptOrder = vi.fn(() => ({ ok: true }));
+    renderPage({ pendingOrders: pending, onAcceptOrder, onRejectOrder: vi.fn() });
+    const inbox = screen.getByRole("region", { name: "Pedidos de clientes" });
+    expect(within(inbox).getByText("Diego Paz")).toBeTruthy();
+    expect(within(inbox).getByText("2 Leche Gloria")).toBeTruthy();
+    expect(within(inbox).getByText("S/ 9.00")).toBeTruthy();
+    fireEvent.click(within(inbox).getByRole("button", { name: "Aceptar pedido de Diego Paz" }));
+    expect(onAcceptOrder).toHaveBeenCalledWith("ped-1");
+  });
+
+  test("si no se puede aceptar muestra el motivo", () => {
+    const onAcceptOrder = vi.fn(() => ({ ok: false, error: "Stock insuficiente para Leche Gloria." }));
+    renderPage({ pendingOrders: pending, onAcceptOrder, onRejectOrder: vi.fn() });
+    fireEvent.click(screen.getByRole("button", { name: "Aceptar pedido de Diego Paz" }));
+    expect(within(screen.getByRole("region", { name: "Pedidos de clientes" })).getByRole("alert").textContent).toContain("Stock insuficiente");
+  });
+
+  test("rechazar pide un motivo antes de confirmar", () => {
+    const onRejectOrder = vi.fn(() => ({ ok: true }));
+    renderPage({ pendingOrders: pending, onAcceptOrder: vi.fn(), onRejectOrder });
+    fireEvent.click(screen.getByRole("button", { name: "Rechazar pedido de Diego Paz" }));
+    fireEvent.change(screen.getByLabelText("Motivo del rechazo"), { target: { value: "Sin stock de leche" } });
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar rechazo" }));
+    expect(onRejectOrder).toHaveBeenCalledWith("ped-1", "Sin stock de leche");
+  });
 });
 
 test("el empleado solo ve sus ventas y el jefe ve todas", () => {

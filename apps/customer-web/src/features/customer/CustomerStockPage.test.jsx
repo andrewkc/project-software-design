@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from "react";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { CustomerStockPage } from "./CustomerStockPage";
 
@@ -56,5 +56,70 @@ test("busca y filtra por categoría", () => {
 
 test("el cliente no tiene acciones de venta ni edición", () => {
   render(page(products));
-  expect(screen.queryByRole("button", { name: /Agregar|Editar|Registrar/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Editar|Registrar/ })).toBeNull();
+});
+
+describe("carrito del cliente", () => {
+  const cart = (props = {}) => {
+    const onPlaceOrder = vi.fn(() => ({ ok: true }));
+    const onCancelOrder = vi.fn();
+    const view = render(<CustomerStockPage products={products} user={user} orders={[]} onPlaceOrder={onPlaceOrder} onCancelOrder={onCancelOrder} {...props} />);
+    return { onPlaceOrder, onCancelOrder, ...view };
+  };
+  const add = (name) => fireEvent.click(screen.getByRole("button", { name: `Agregar ${name} al pedido` }));
+
+  beforeEach(() => localStorage.clear());
+
+  test("arma el pedido, calcula el total y lo envía a la bodega", () => {
+    const { onPlaceOrder } = cart();
+    add("Leche Gloria"); add("Leche Gloria"); add("Arroz extra");
+    expect(screen.getByTestId("order-total").textContent).toContain("13.20");
+    fireEvent.click(screen.getByRole("button", { name: "Enviar pedido" }));
+    expect(onPlaceOrder).toHaveBeenCalledWith([{ productId: 1, quantity: 2 }, { productId: 2, quantity: 1 }]);
+    expect(screen.getByText("Tu pedido está vacío")).toBeTruthy();
+  });
+
+  test("no deja pedir productos agotados ni más del stock", () => {
+    cart();
+    expect(screen.getByRole("button", { name: "Atún agotado" }).disabled).toBe(true);
+    add("Arroz extra"); add("Arroz extra"); add("Arroz extra"); add("Arroz extra");
+    expect(screen.getByLabelText("Cantidad de Arroz extra").value).toBe("3");
+    expect(screen.getByRole("alert").textContent).toContain("Solo quedan 3");
+  });
+
+  test("si el stock baja en vivo ajusta el pedido y avisa", () => {
+    const { rerender, onPlaceOrder, onCancelOrder } = cart();
+    add("Arroz extra"); add("Arroz extra"); add("Arroz extra");
+    rerender(<CustomerStockPage products={products.map((item) => item.id === 2 ? { ...item, stock: 1 } : item)} user={user} orders={[]} onPlaceOrder={onPlaceOrder} onCancelOrder={onCancelOrder} />);
+    expect(screen.getByLabelText("Cantidad de Arroz extra").value).toBe("1");
+    expect(screen.getByRole("alert").textContent).toContain("Ahora solo quedan 1 unid. de Arroz extra");
+  });
+
+  test("conserva el pedido si no se pudo enviar", () => {
+    const onPlaceOrder = vi.fn(() => ({ ok: false, error: "Solo quedan 1 unid. de Leche Gloria." }));
+    cart({ onPlaceOrder });
+    add("Leche Gloria");
+    fireEvent.click(screen.getByRole("button", { name: "Enviar pedido" }));
+    expect(screen.getByRole("alert").textContent).toContain("Solo quedan 1");
+    expect(screen.getByLabelText("Cantidad de Leche Gloria")).toBeTruthy();
+  });
+
+  test("muestra el estado de sus pedidos y deja cancelar los pendientes", () => {
+    const line = [{ productoId: 1, productoNombre: "Leche Gloria", cantidad: 2, unidad: "unid.", precio: 4.5, subtotal: 9 }];
+    const base = { store: "Bodega San Martín", clienteId: "c1", clienteNombre: "Diego Paz", creadoEn: "2026-11-24T15:00:00.000Z", total: 9, lineas: line };
+    const orders = [
+      { ...base, id: "ped-1", estado: "pendiente" },
+      { ...base, id: "ped-2", estado: "aceptado", atendidoPorNombre: "Ana Torres" },
+      { ...base, id: "ped-3", estado: "rechazado", motivoRechazo: "Cerramos temprano" },
+    ];
+    const { onCancelOrder } = cart({ orders });
+    const history = screen.getByRole("region", { name: "Tus pedidos" });
+    expect(within(history).getByText("Pendiente")).toBeTruthy();
+    expect(within(history).getByText(/Aceptado por Ana Torres/)).toBeTruthy();
+    expect(within(history).getByText(/Cerramos temprano/)).toBeTruthy();
+    const cancels = within(history).getAllByRole("button", { name: "Cancelar pedido" });
+    expect(cancels).toHaveLength(1);
+    fireEvent.click(cancels[0]);
+    expect(onCancelOrder).toHaveBeenCalledWith("ped-1");
+  });
 });

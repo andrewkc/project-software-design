@@ -1,0 +1,18 @@
+❯ src/features/customer/CustomerStockPage.test.jsx (10 tests | 5 failed) 1806ms
+❯ src/features/sales/SalesPage.test.jsx (11 tests | 3 failed) 2098ms
+Error: Failed to resolve import "./adminProfiles" from "src/lib/adminProfiles.test.js". Does the file exist?
+Error: Failed to resolve import "./directory" from "src/lib/directory.test.js". Does the file exist?
+Error: Failed to resolve import "./orders" from "src/lib/orders.test.js". Does the file exist?
+Error: Failed to resolve import "./AdminPage" from "src/features/admin/AdminPage.test.jsx". Does the file exist?
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+FAIL  src/features/customer/CustomerStockPage.test.jsx > carrito del cliente > arma el pedido, calcula el total y lo envía a la bodega
+FAIL  src/features/customer/CustomerStockPage.test.jsx > carrito del cliente > no deja pedir productos agotados ni más del stock
+FAIL  src/features/customer/CustomerStockPage.test.jsx > carrito del cliente > si el stock baja en vivo ajusta el pedido y avisa
+FAIL  src/features/customer/CustomerStockPage.test.jsx > carrito del cliente > conserva el pedido si no se pudo enviar
+FAIL  src/features/customer/CustomerStockPage.test.jsx > carrito del cliente > muestra el estado de sus pedidos y deja cancelar los pendientes
+FAIL  src/features/sales/SalesPage.test.jsx > pedidos de clientes > muestra el pedido y lo acepta como venta
+FAIL  src/features/sales/SalesPage.test.jsx > pedidos de clientes > si no se puede aceptar muestra el motivo
+FAIL  src/features/sales/SalesPage.test.jsx > pedidos de clientes > rechazar pide un motivo antes de confirmar
+Test Files  6 failed | 4 passed (10)
+Tests  8 failed | 68 passed (76)
+Duration  7.29s (transform 1.25s, setup 0ms, collect 5.98s, tests 4.31s, environment 23.18s, prepare 2.87s)
