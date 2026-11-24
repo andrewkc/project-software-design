@@ -1,0 +1,3 @@
+﻿Error: Failed to resolve import "./sales" from "src/lib/sales.test.js". Does the file exist?
+ Test Files  1 failed (1)
+      Tests  no tests
