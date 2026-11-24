@@ -42,6 +42,7 @@ export const navigation = [
   { id: "alerts", label: "Vencimientos", icon: "calendar" },
   { id: "employees", label: "Empleados", icon: "shield", jefeOnly: true },
   { id: "stock", label: "Stock en vivo", icon: "box", clienteOnly: true },
+  { id: "admin", label: "Perfiles", icon: "users", adminOnly: true },
 ];
 
 export const mobileNavigation = [
@@ -52,6 +53,7 @@ export const mobileNavigation = [
   { id: "alerts", label: "Alertas", icon: "calendar" },
   { id: "employees", label: "Equipo", icon: "shield", jefeOnly: true },
   { id: "stock", label: "Stock", icon: "box", clienteOnly: true },
+  { id: "admin", label: "Perfiles", icon: "shield", adminOnly: true },
   { id: "profile", label: "Perfil", icon: "users", empleadoOnly: true },
 ];
 
@@ -60,4 +62,5 @@ export const demoAccounts = [
   { id: "user-jefe", role: "jefe", name: "Jefe Demo", nombres: "Jefe", apellidos: "Demo", email: "jefe@demo.example", store: "Bodega San Martín", demo: true, label: "Jefe" },
   { id: "emp-demo", role: "empleado", name: "Empleado Demo", nombres: "Empleado", apellidos: "Demo", email: "empleado@demo.example", store: "Bodega San Martín", demo: true, label: "Empleado" },
   { id: "cli-demo", role: "cliente", name: "Cliente Demo", nombres: "Cliente", apellidos: "Demo", email: "cliente@demo.example", store: "Bodega San Martín", demo: true, label: "Cliente" },
+  { id: "adm-demo", role: "admin", name: "Admin Demo", nombres: "Admin", apellidos: "Demo", email: "admin@demo.example", store: "", demo: true, label: "Admin" },
 ];

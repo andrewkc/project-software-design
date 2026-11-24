@@ -145,6 +145,11 @@ export async function updateProfile(id, changes) {
   run(database, `UPDATE profiles SET ${columns.map((column) => `${column} = ?`).join(", ")} WHERE id = ?`, [...values, id]);
 }
 
+export async function deleteProfile(id) {
+  const database = await getDatabase();
+  run(database, "DELETE FROM profiles WHERE id = ?", [id]);
+}
+
 export function isSqliteAvailable() {
   return databasePromise !== null;
 }

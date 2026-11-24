@@ -15,7 +15,42 @@ const soles = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
 const stepFor = (unit) => (["kg", "litro"].includes(unit) ? 0.5 : 1);
 const timeLabel = (value) => new Date(value).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
-export function SalesPage({ products, movements, user, onRegisterSale }) {
+// Pedidos de clientes: aceptar registra la venta con el mismo control de stock; rechazar exige un motivo.
+function OrderInbox({ orders, onAccept, onReject }) {
+  const [rejecting, setRejecting] = useState(null);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
+
+  function attempt(result) {
+    if (!result?.ok) return setError(result?.error || "No se pudo atender el pedido.");
+    setError("");
+    setRejecting(null);
+    setReason("");
+    return undefined;
+  }
+
+  return <section className="content-card order-inbox" role="region" aria-label="Pedidos de clientes">
+    <h2>Pedidos de clientes <span className="order-inbox-count">{orders.length}</span></h2>
+    {error && <p className="sales-error" role="alert">{error}</p>}
+    <ul>{orders.map((order) => <li key={order.id}>
+      <div className="order-inbox-row">
+        <span className="order-inbox-main"><strong>{order.clienteNombre}</strong><span>{order.lineas.map((line) => `${line.cantidad} ${line.productoNombre}`).join(", ")}</span><small>{timeLabel(order.creadoEn)}</small></span>
+        <b>{soles(order.total)}</b>
+        <span className="order-inbox-actions">
+          <button type="button" className="button button-primary" aria-label={`Aceptar pedido de ${order.clienteNombre}`} onClick={() => attempt(onAccept(order.id))}><Icon name="check" size={15} />Aceptar</button>
+          <button type="button" className="order-reject" aria-label={`Rechazar pedido de ${order.clienteNombre}`} onClick={() => { setRejecting(order.id); setReason(""); }}>Rechazar</button>
+        </span>
+      </div>
+      {rejecting === order.id && <form className="order-reject-form" onSubmit={(event) => { event.preventDefault(); attempt(onReject(order.id, reason)); }}>
+        <input aria-label="Motivo del rechazo" placeholder="Motivo, por ejemplo: se acabó la leche" value={reason} onChange={(event) => setReason(event.target.value)} required />
+        <button type="submit" disabled={!reason.trim()}>Confirmar rechazo</button>
+        <button type="button" className="order-reject-cancel" onClick={() => setRejecting(null)}>Volver</button>
+      </form>}
+    </li>)}</ul>
+  </section>;
+}
+
+export function SalesPage({ products, movements, user, onRegisterSale, pendingOrders = [], onAcceptOrder, onRejectOrder }) {
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState("");
   const [assist, setAssist] = useState(null);
@@ -101,6 +136,7 @@ export function SalesPage({ products, movements, user, onRegisterSale }) {
   return <div className="page-content inner-page sales-page">
     <PageDate />
     <section className="welcome-row"><div><h1>Registrar venta</h1><p className="welcome-subtitle">Arma la cesta y confirma. El stock se descuenta una sola vez.</p></div></section>
+    {pendingOrders.length > 0 && <OrderInbox orders={pendingOrders} onAccept={onAcceptOrder} onReject={onRejectOrder} />}
     <div className="sales-layout">
       <section className="content-card sales-catalog" aria-label="Productos para vender">
         <div className="sales-tools">

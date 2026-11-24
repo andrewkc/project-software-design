@@ -37,7 +37,7 @@ export function ProfilePage({ user, onLogout, onChangePassword }) {
     </section>
     <section className="profile-page-card">
       <div className="profile-page-avatar">{displayName.charAt(0).toUpperCase()}</div>
-      <div className="profile-page-info"><h2>{displayName}</h2><p>{{ empleado: "Empleado", cliente: "Cliente" }[user?.role] || "Jefe de Bodega"}</p><dl><div><dt>Nombre completo</dt><dd>{fullName}</dd></div><div><dt>Correo electrónico</dt><dd>{email}</dd></div><div><dt>{copy.storeFieldLabel}</dt><dd>{store}</dd></div></dl></div>
+      <div className="profile-page-info"><h2>{displayName}</h2><p>{{ empleado: "Empleado", cliente: "Cliente", admin: "Administrador de BodeSmart" }[user?.role] || "Jefe de Bodega"}</p><dl><div><dt>Nombre completo</dt><dd>{fullName}</dd></div><div><dt>Correo electrónico</dt><dd>{email}</dd></div><div><dt>{copy.storeFieldLabel}</dt><dd>{store}</dd></div></dl></div>
       <div className="profile-page-actions">
         <button className="button button-secondary profile-logout" type="button" onClick={onLogout}>Cerrar sesión</button>
       </div>
