@@ -124,7 +124,7 @@ export function SalesPage({ products, movements, user, onRegisterSale }) {
         })}</div>
         {visible.length === 0 && <EmptyState icon="search" title="No encontramos productos" text="Prueba con otro nombre." />}
       </section>
-      <aside className="content-card sales-cart" aria-label="Cesta de venta">
+      <aside id="sale-cart" className="content-card sales-cart" aria-label="Cesta de venta">
         <h2>Cesta</h2>
         {lines.length === 0 ? <p className="sales-empty">La cesta está vacía</p> : <ul className="sales-lines">{lines.map(({ product, quantity }) => <li key={product.id}>
           <span className="sales-line-name"><strong>{product.icon} {product.name}</strong><small>{soles(product.price)} · {product.unit}</small></span>
@@ -138,6 +138,7 @@ export function SalesPage({ products, movements, user, onRegisterSale }) {
         <p className="sales-responsible">Responsable: {user?.name}</p>
       </aside>
     </div>
+    {lines.length > 0 && <button type="button" className="sales-mobile-bar" onClick={() => document.getElementById("sale-cart")?.scrollIntoView({ behavior: "smooth", block: "center" })}><span>Ver cesta · {lines.length}</span><strong>{soles(total)}</strong></button>}
     <section className="content-card sales-history" role="region" aria-label="Ventas recientes">
       <h2>{isJefe(user) ? "Ventas recientes de la bodega" : "Tus ventas recientes"}</h2>
       {recent.length === 0 ? <p className="sales-empty">Aún no hay ventas registradas.</p> : <ul>{recent.map((movement) => <li key={movement.id}>
