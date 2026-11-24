@@ -1,0 +1,118 @@
+
+CREATE TABLE Bodega (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    direccion VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE Jefe (
+    id SERIAL PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    correo VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    id_bodega INT UNIQUE NOT NULL,
+
+    FOREIGN KEY (id_bodega) REFERENCES Bodega(id)
+);
+
+CREATE TABLE Empleado (
+    id SERIAL PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    correo VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    id_jefe INT NOT NULL,
+
+    FOREIGN KEY (id_jefe) REFERENCES Jefe(id)
+);
+
+CREATE TABLE Producto (
+    id SERIAL PRIMARY KEY,
+    icono VARCHAR(100),
+    nombre VARCHAR(100) NOT NULL,
+    categoria VARCHAR(100),
+    unidad_medida VARCHAR(50),
+    stock INT NOT NULL DEFAULT 0,
+    precio_venta DECIMAL(10,2) NOT NULL,
+    fecha_vencimiento DATE,
+    estado VARCHAR(50) NOT NULL,
+    id_bodega INT NOT NULL,
+
+    FOREIGN KEY (id_bodega) REFERENCES Bodega(id),
+
+    UNIQUE (id_bodega, nombre)
+);
+
+CREATE TABLE Admin (
+    id SERIAL PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    correo VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'activo',
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Cliente (
+    id SERIAL PRIMARY KEY,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    correo VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    telefono VARCHAR(20),
+    estado VARCHAR(20) NOT NULL DEFAULT 'activo',
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Oferta (
+    id SERIAL PRIMARY KEY,
+    id_producto INT NOT NULL REFERENCES Producto(id),
+    precio_oferta DECIMAL(10,2) NOT NULL,
+    fecha_inicio TIMESTAMP NOT NULL,
+    fecha_fin TIMESTAMP NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'activo'
+);
+
+CREATE TABLE Carrito (
+    id SERIAL PRIMARY KEY,
+    id_cliente INT NOT NULL REFERENCES Cliente(id),
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE DetalleCarrito (
+    id SERIAL PRIMARY KEY,
+    id_carrito INT NOT NULL REFERENCES Carrito(id),
+    id_producto INT NOT NULL REFERENCES Producto(id),
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    precio_unitario DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE Compra (
+    id SERIAL PRIMARY KEY,
+    id_cliente INT NOT NULL REFERENCES Cliente(id),
+    id_bodega INT NOT NULL REFERENCES Bodega(id),
+    total DECIMAL(10,2) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    fecha_compra TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_recojo TIMESTAMP
+);
+
+CREATE TABLE DetalleCompra (
+    id SERIAL PRIMARY KEY,
+    id_compra INT NOT NULL REFERENCES Compra(id),
+    id_producto INT NOT NULL REFERENCES Producto(id),
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE Pago (
+    id SERIAL PRIMARY KEY,
+    id_compra INT NOT NULL REFERENCES Compra(id),
+    metodo_pago VARCHAR(50) NOT NULL,
+    id_transaccion_externa VARCHAR(150),
+    monto DECIMAL(10,2) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    fecha_pago TIMESTAMP
+);
