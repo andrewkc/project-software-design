@@ -17,3 +17,4 @@ __pycache__/
 
 # Unnecessary
 templates/
+apps/key-instance-01.pem
