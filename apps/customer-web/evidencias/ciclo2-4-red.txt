@@ -1,0 +1,5 @@
+﻿Error: Failed to resolve import "./labelParser" from "src/lib/labelParser.test.js". Does the file exist?
+Error: Failed to resolve import "./liveStock" from "src/lib/liveStock.test.js". Does the file exist?
+Error: Failed to resolve import "./voiceParser" from "src/lib/voiceParser.test.js". Does the file exist?
+ Test Files  3 failed | 1 passed (4)
+      Tests  21 passed (21)
