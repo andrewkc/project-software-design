@@ -1,6 +1,6 @@
 import React from "react";
 import { Icon } from "../Icon";
-import { isJefe } from "../../lib/permissions";
+import { isCliente, isJefe } from "../../lib/permissions";
 import { useLayout } from "./LayoutContext";
 
 export function PageDate({ onNotifications, notificationCount = 0 }) {
@@ -9,7 +9,7 @@ export function PageDate({ onNotifications, notificationCount = 0 }) {
   return <div className="page-date">
     <span className="today-label">{new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</span>
     <div className="page-date-actions">
-      <button type="button" className="icon-button notification-button" aria-label="Notificaciones" onClick={onNotifications}><Icon name="bell" size={19} />{notificationCount > 0 && <i />}</button>
+      {!isCliente(user) && <button type="button" className="icon-button notification-button" aria-label="Notificaciones" onClick={onNotifications}><Icon name="bell" size={19} />{notificationCount > 0 && <i />}</button>}
       {showProfileShortcut && <button type="button" className="icon-button profile-shortcut" aria-label="Perfil" onClick={() => onNavigate("profile")}><Icon name="users" size={19} /></button>}
     </div>
   </div>;

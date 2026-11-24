@@ -2,10 +2,18 @@ import React from "react";
 import { Brand } from "../Brand";
 import { Icon } from "../Icon";
 import { mobileNavigation, navigation } from "../../data/demoData";
-import { isJefe } from "../../lib/permissions";
+import { isCliente, isJefe } from "../../lib/permissions";
 import { workspaceCopy } from "../../lib/workspaceCopy";
 import { profileNames } from "../../lib/profileNames";
 import { LayoutContext } from "./LayoutContext";
+
+const ROLE_LABELS = { jefe: "Jefe de Bodega", empleado: "Empleado", cliente: "Cliente" };
+
+function itemsFor(items, user) {
+  if (isCliente(user)) return items.filter((item) => item.clienteOnly || item.id === "profile");
+  const jefe = isJefe(user);
+  return items.filter((item) => !item.clienteOnly && (!item.jefeOnly || jefe) && (!item.empleadoOnly || !jefe));
+}
 
 export function OperationsLayout({ user, activeTab, expiringCount, onNavigate, onRegister, onLogout, children }) {
   const copy = workspaceCopy(user);
@@ -17,8 +25,8 @@ export function OperationsLayout({ user, activeTab, expiringCount, onNavigate, o
       {/* <span className="switch-arrow">˅</span> */}
       </div>
       <span className="nav-caption">MENÚ PRINCIPAL</span>
-      <nav className="side-nav" aria-label="Navegaci&oacute;n principal">{navigation.filter((item) => !item.jefeOnly || isJefe(user)).map((item) => <button key={item.id} type="button" className={`nav-link ${activeTab === item.id ? "active" : ""}`} onClick={() => item.id === "register" ? onRegister() : onNavigate(item.id)}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <span className="nav-count">{expiringCount}</span>}</button>)}</nav>
-      <button className="profile-card" type="button" onClick={() => onNavigate("profile")}><span className="profile-avatar">{initial}</span><span><strong>{displayName}</strong><small>{isJefe(user) ? "Jefe de Bodega" : "Empleado"}</small></span><span className="profile-dots">&middot;&middot;&middot;</span></button>
+      <nav className="side-nav" aria-label="Navegaci&oacute;n principal">{itemsFor(navigation, user).map((item) => <button key={item.id} type="button" className={`nav-link ${activeTab === item.id ? "active" : ""}`} onClick={() => item.id === "register" ? onRegister() : onNavigate(item.id)}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <span className="nav-count">{expiringCount}</span>}</button>)}</nav>
+      <button className="profile-card" type="button" onClick={() => onNavigate("profile")}><span className="profile-avatar">{initial}</span><span><strong>{displayName}</strong><small>{ROLE_LABELS[user?.role] || ROLE_LABELS.jefe}</small></span><span className="profile-dots">&middot;&middot;&middot;</span></button>
     </aside>
     <main className="main-area">
       {/* <header className="topbar"> */}
@@ -33,7 +41,6 @@ export function OperationsLayout({ user, activeTab, expiringCount, onNavigate, o
 }
 
 function MobileNav({ user, activeTab, expiringCount, onNavigate, onRegister, onLogout }) {
-  const jefe = isJefe(user);
-  const items = mobileNavigation.filter((item) => (!item.jefeOnly || jefe) && (!item.empleadoOnly || !jefe));
+  const items = itemsFor(mobileNavigation, user);
   return <nav className="mobile-nav" aria-label="Navegaci&oacute;n m&oacute;vil" data-count={items.length}>{items.map((item) => <button key={item.id} type="button" className={activeTab === item.id ? "active" : ""} onClick={() => { if (item.id === "register") return onRegister(); onNavigate(item.id); }}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <i />}</button>)}</nav>;
 }

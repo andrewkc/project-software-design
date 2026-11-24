@@ -1,21 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
+import { VoiceInput } from "../../components/common/VoiceInput";
+import { analyzeProductImage } from "../../lib/imageAnalysis";
+import { localToday } from "../../lib/sales";
+import { parseProductSpeech } from "../../lib/voiceParser";
 import { workspaceCopy } from "../../lib/workspaceCopy";
 
-export function ProductModal({ method, user, onClose, onSubmit, voiceCaptured, setVoiceCaptured, photoName, setPhotoName, barcode, setBarcode }) {
-  const [prefill, setPrefill] = useState(false);
+export function ProductModal({ method, user, onClose, onSubmit, photoName, setPhotoName, barcode, setBarcode }) {
+  const [suggestion, setSuggestion] = useState(null);
   const copy = workspaceCopy(user);
   const title = method?.id === "photo" ? "Registra con una foto" : method?.id === "voice" ? "Registra con tu voz" : method?.id === "scan" ? "Escanea el c&oacute;digo" : "Escribe los detalles";
-  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-header"><span className={`modal-method-icon method-${method?.tint}`}><Icon name={method?.icon} size={21} /></span><button type="button" className="icon-button close-modal" aria-label="Cerrar" onClick={onClose}><Icon name="close" size={20} /></button><span className="section-kicker">NUEVA MERCADER&Iacute;A</span><h2 id="modal-title">{title}</h2><p>{copy.modalHint}</p></div>{method?.id === "photo" && <PhotoCapture photoName={photoName} setPhotoName={setPhotoName} />}{method?.id === "voice" && <VoiceCapture captured={voiceCaptured} onCapture={() => { setVoiceCaptured(true); setPrefill(true); }} />}{method?.id === "scan" && <BarcodeCapture barcode={barcode} setBarcode={setBarcode} onExample={() => { setBarcode("7750182003412"); setPrefill(true); }} />}<ProductForm key={prefill ? "prefilled" : "empty"} prefill={prefill} onSubmit={onSubmit} onClose={onClose} /></section></div>;
+  return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="product-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-header"><span className={`modal-method-icon method-${method?.tint}`}><Icon name={method?.icon} size={21} /></span><button type="button" className="icon-button close-modal" aria-label="Cerrar" onClick={onClose}><Icon name="close" size={20} /></button><span className="section-kicker">NUEVA MERCADER&Iacute;A</span><h2 id="modal-title">{title}</h2><p>{copy.modalHint}</p></div>{method?.id === "photo" && <PhotoCapture photoName={photoName} setPhotoName={setPhotoName} onSuggestion={setSuggestion} />}{method?.id === "voice" && <VoiceCapture onSuggestion={setSuggestion} />}{method?.id === "scan" && <BarcodeCapture barcode={barcode} setBarcode={setBarcode} />}<ProductForm key={JSON.stringify(suggestion)} suggestion={suggestion} barcode={barcode} onSubmit={onSubmit} onClose={onClose} /></section></div>;
 }
 
-export function PhotoCapture({ photoName, setPhotoName }) {
+export function PhotoCapture({ photoName, setPhotoName, onSuggestion }) {
   const cameraInput = useRef(null);
   const galleryInput = useRef(null);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState("");
+  const [analysis, setAnalysis] = useState({ busy: false, progress: 0, message: "" });
+
+  async function analyzePhoto() {
+    setAnalysis({ busy: true, progress: 0, message: "" });
+    try {
+      const result = await analyzeProductImage(capturedImage, (progress) => setAnalysis((current) => ({ ...current, progress })));
+      const found = result.name || result.price !== null || result.expires;
+      if (found) onSuggestion?.({ name: result.name, price: result.price, expires: result.expires, category: result.category, source: "foto" });
+      setAnalysis({ busy: false, progress: 0, message: found ? "Datos leídos. Revísalos antes de guardar." : "No encontramos datos claros. Prueba con más luz o escríbelos." });
+    } catch {
+      setAnalysis({ busy: false, progress: 0, message: "No se pudo analizar la imagen. Revisa tu conexión o escribe los datos." });
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +81,7 @@ export function PhotoCapture({ photoName, setPhotoName }) {
   }
 
   async function repeatPhoto() {
+    setAnalysis({ busy: false, progress: 0, message: "" });
     setCapturedImage("");
     setPhotoName("");
     if (!navigator.mediaDevices?.getUserMedia) return;
@@ -75,14 +93,14 @@ export function PhotoCapture({ photoName, setPhotoName }) {
     }
   }
 
-  return <div className={`photo-camera ${photoName ? "has-photo" : ""}`}><div className="photo-camera-preview">{capturedImage ? <img src={capturedImage} alt="Producto capturado" /> : cameraReady ? <video ref={videoRef} autoPlay muted playsInline aria-label="Vista previa de la cámara" /> : <span>Activa la cámara para enfocar el producto</span>}</div><div className="photo-camera-controls"><button type="button" className="photo-gallery-button" aria-label="Elegir una foto de la galería" onClick={() => galleryInput.current?.click()}><Icon name="image" size={22} /></button>{capturedImage ? <button type="button" className="photo-retake-button photo-shutter-replacement" aria-label="Repetir toma de foto" onClick={repeatPhoto}><Icon name="refresh" size={21} /></button> : <button type="button" className="photo-shutter" aria-label="Tomar foto" onClick={capturePhoto}><span /></button>}<button type="button" className="photo-flash-button" aria-label="Flash desactivado" disabled><Icon name="flash" size={21} /></button></div><p className="photo-ai-note"><Icon name="sparkles" size={14} /> La IA reconocer&aacute; el producto en la imagen.</p><input ref={cameraInput} className="photo-file-input" type="file" accept="image/*" capture="environment" onChange={handleSelectedFile} /><input ref={galleryInput} className="photo-file-input" type="file" accept="image/*" onChange={handleSelectedFile} /></div>;
+  return <div className={`photo-camera ${photoName ? "has-photo" : ""}`}><div className="photo-camera-preview">{capturedImage ? <img src={capturedImage} alt="Producto capturado" /> : cameraReady ? <video ref={videoRef} autoPlay muted playsInline aria-label="Vista previa de la cámara" /> : <span>Activa la cámara para enfocar el producto</span>}</div><div className="photo-camera-controls"><button type="button" className="photo-gallery-button" aria-label="Elegir una foto de la galería" onClick={() => galleryInput.current?.click()}><Icon name="image" size={22} /></button>{capturedImage ? <button type="button" className="photo-retake-button photo-shutter-replacement" aria-label="Repetir toma de foto" onClick={repeatPhoto}><Icon name="refresh" size={21} /></button> : <button type="button" className="photo-shutter" aria-label="Tomar foto" onClick={capturePhoto}><span /></button>}<button type="button" className="photo-flash-button" aria-label="Flash desactivado" disabled><Icon name="flash" size={21} /></button></div>{capturedImage ? <div className="photo-analyze"><button type="button" disabled={analysis.busy} onClick={analyzePhoto}><Icon name="sparkles" size={15} /> {analysis.busy ? `Leyendo etiqueta… ${analysis.progress}%` : "Leer etiqueta con IA"}</button>{analysis.message && <p role="status">{analysis.message}</p>}</div> : <p className="photo-ai-note"><Icon name="sparkles" size={14} /> Enfoca la etiqueta: la IA leer&aacute; nombre, precio y vencimiento.</p>}<input ref={cameraInput} className="photo-file-input" type="file" accept="image/*" capture="environment" onChange={handleSelectedFile} /><input ref={galleryInput} className="photo-file-input" type="file" accept="image/*" onChange={handleSelectedFile} /></div>;
 }
 
-export function VoiceCapture({ captured, onCapture }) { return <div className={`voice-capture ${captured ? "recorded" : ""}`}><button type="button" className="mic-button" aria-label={captured ? "Ejemplo de voz transcrito" : "Probar grabaci&oacute;n de voz"} onClick={onCapture}><Icon name={captured ? "check" : "mic"} size={22} /></button><strong>{captured ? "¡Listo! Te escuchamos" : "Toca el micrófono para empezar"}</strong>
-{/* <small>{captured ? "Agrega 6 yogures naturales &middot; ejemplo de demostración" : "Prueba una grabación de ejemplo"}</small> */}
-</div>; }
+export function VoiceCapture({ onSuggestion }) {
+  return <VoiceInput example="agrega seis yogures a 3.50 soles que vencen el 20 de diciembre" onText={(text) => onSuggestion({ ...parseProductSpeech(text, localToday()), source: "voz" })} />;
+}
 
-export function BarcodeCapture({ barcode, setBarcode, onExample }) {
+export function BarcodeCapture({ barcode, setBarcode, onDetected }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
@@ -123,14 +141,14 @@ export function BarcodeCapture({ barcode, setBarcode, onExample }) {
     try {
       const detector = new window.BarcodeDetector();
       const results = await detector.detect(videoRef.current);
-      if (results[0]?.rawValue) { setBarcode(results[0].rawValue); setScanMessage("Código obtenido correctamente."); stopCamera(); }
+      if (results[0]?.rawValue) { setBarcode(results[0].rawValue); setScanMessage("Código obtenido correctamente."); stopCamera(); onDetected?.(results[0].rawValue); }
       else setScanMessage("No encontramos un código. Intenta nuevamente.");
     } catch {
       setScanMessage("No se pudo leer el código. Puedes ingresarlo manualmente.");
     }
   }
 
-  return <><div className="barcode-zone barcode-camera-zone"><div className="barcode-camera-preview">{cameraReady ? <video ref={videoRef} autoPlay muted playsInline aria-label="Vista previa del escáner" /> : <span><Icon name="scan" size={25} /> Cámara desactivada</span>}</div><button type="button" className="barcode-scan-button" onClick={scanCode}><Icon name="scan" size={18} /> Escanear código</button>{scanMessage && <p className="barcode-scan-message">{scanMessage}</p>}</div><label className="barcode-manual-label">Buscar código directamente<div className="barcode-manual-input"><input value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="Código de barras" aria-label="Código de barras" /><button type="button" aria-label="Buscar Código" onClick={() => setScanMessage(barcode.trim() ? "Código listo para registrar." : "Ingresa un Código primero.")}><Icon name="search" size={17} /></button></div></label></>;
+  return <><div className="barcode-zone barcode-camera-zone"><div className="barcode-camera-preview">{cameraReady ? <video ref={videoRef} autoPlay muted playsInline aria-label="Vista previa del escáner" /> : <span><Icon name="scan" size={25} /> Cámara desactivada</span>}</div><button type="button" className="barcode-scan-button" onClick={scanCode}><Icon name="scan" size={18} /> Escanear código</button>{scanMessage && <p className="barcode-scan-message">{scanMessage}</p>}</div><label className="barcode-manual-label">Buscar código directamente<div className="barcode-manual-input"><input value={barcode} onChange={(event) => setBarcode(event.target.value)} placeholder="Código de barras" aria-label="Código de barras" /><button type="button" aria-label="Buscar Código" onClick={() => { setScanMessage(barcode.trim() ? "Código listo." : "Ingresa un Código primero."); if (barcode.trim()) onDetected?.(barcode.trim()); }}><Icon name="search" size={17} /></button></div></label></>;
 }
 
 const PRODUCT_EMOJIS = [
@@ -242,7 +260,11 @@ export function ProductIconPicker({ value, onChange }) {
   </div>;
 }
 
-export function ProductForm({ prefill, onSubmit, onClose }) {
-  const [icon, setIcon] = useState(prefill ? "🥛" : "📦");
-  return <form className="product-form" onSubmit={onSubmit}><label className="full-field">Nombre del producto<input name="productName" placeholder="Ej. Yogurt natural" defaultValue={prefill ? "Yogurt natural" : ""} required /></label><div className="full-field product-icon-field"><span className="field-label">Ícono</span><ProductIconPicker value={icon} onChange={setIcon} /></div><label>Categor&iacute;a<select name="category" defaultValue="Abarrotes"><option>Abarrotes</option><option>L&aacute;cteos</option><option>Frutas</option><option>Bebidas</option><option>Limpieza</option><option>Otros</option></select></label><label>Cantidad<div className="input-with-suffix"><input name="quantity" type="number" min="1" defaultValue={prefill ? "6" : ""} placeholder="0" required /><select name="unit" aria-label="Unidad"><option>unid.</option><option>kg</option><option>paq.</option><option>caja</option><option>litro</option></select></div></label><label>Precio de venta<div className="input-with-prefix"><span>S/</span><input name="price" type="number" min="0" step="0.10" placeholder="0.00" /></div></label><label>Fecha de vencimiento<input name="expires" type="date" /></label><p className="modal-prototype-note" /><div className="modal-actions"><button type="button" className="button button-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="button button-primary">Guardar en inventario</button></div></form>;
+const FORM_CATEGORIES = ["Abarrotes", "Lácteos", "Frutas", "Bebidas", "Limpieza", "Snacks", "Conservas", "Cuidado personal", "Otros"];
+const FORM_UNITS = ["unid.", "kg", "paq.", "caja", "litro"];
+
+export function ProductForm({ suggestion, barcode = "", onSubmit, onClose }) {
+  const [icon, setIcon] = useState(suggestion?.icon || "📦");
+  const category = FORM_CATEGORIES.includes(suggestion?.category) ? suggestion.category : "Abarrotes";
+  return <form className="product-form" onSubmit={onSubmit}><input type="hidden" name="barcode" value={barcode} />{suggestion?.source && <p className="ai-review-note"><Icon name="sparkles" size={14} /> Sugerido desde {suggestion.source}. Revisa los datos: nada se guarda hasta que confirmes.</p>}<label className="full-field">Nombre del producto<input name="productName" placeholder="Ej. Yogurt natural" defaultValue={suggestion?.name || ""} required /></label><div className="full-field product-icon-field"><span className="field-label">Ícono</span><ProductIconPicker value={icon} onChange={setIcon} /></div><label>Categor&iacute;a<select name="category" defaultValue={category}>{FORM_CATEGORIES.map((item) => <option key={item}>{item}</option>)}</select></label><label>Cantidad<div className="input-with-suffix"><input name="quantity" type="number" min="0.01" step="any" defaultValue={suggestion?.quantity ?? ""} placeholder="0" required /><select name="unit" aria-label="Unidad" defaultValue={suggestion?.unit || "unid."}>{FORM_UNITS.map((item) => <option key={item}>{item}</option>)}</select></div></label><label>Precio de venta<div className="input-with-prefix"><span>S/</span><input name="price" type="number" min="0" step="0.01" placeholder="0.00" defaultValue={suggestion?.price ?? ""} /></div></label><label>Fecha de vencimiento<input name="expires" type="date" defaultValue={suggestion?.expires || ""} /></label><p className="modal-prototype-note" /><div className="modal-actions"><button type="button" className="button button-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="button button-primary">Guardar en inventario</button></div></form>;
 }

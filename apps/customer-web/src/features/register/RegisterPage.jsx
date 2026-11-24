@@ -18,41 +18,44 @@ export function RegisterPage({ products, user, onSubmit }) {
   const [search, setSearch] = useState("");
   const [photoName, setPhotoName] = useState("");
   const [barcode, setBarcode] = useState("");
-  const [voiceCaptured, setVoiceCaptured] = useState(false);
-  const [prefill, setPrefill] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
 
   const matchingProducts = useMemo(() => products.filter((product) => product.name.toLowerCase().includes(search.toLowerCase())), [products, search]);
 
   function changeMode(nextMode) {
     setMode(nextMode);
-    setVoiceCaptured(false);
     setPhotoName("");
     setBarcode("");
-    setPrefill(false);
+    setSuggestion(null);
+  }
+
+  function applyBarcode(code) {
+    const known = products.find((product) => product.barcode && product.barcode === code);
+    if (known) setSuggestion({ ...known, quantity: null, source: "código" });
   }
 
   function selectPastProduct(product) {
     setMode("text");
-    setPrefill(true);
+    setSuggestion({ ...product, quantity: null });
     setSearch(product.name);
   }
 
   return <div className="page-content inner-page register-page"><PageDate /><section className="welcome-row register-heading"><div>
     {/* <p className="date-greeting">NUEVO PRODUCTO</p> */}
-    <h1>Registrar producto</h1><p className="welcome-subtitle">{copy.registerSubtitle}</p></div></section><div className="register-workspace"><nav className="register-subnav" aria-label="Métodos para registrar producto">{registerModes.map((item) => <button type="button" className={mode === item.id ? "active" : ""} key={item.id} onClick={() => changeMode(item.id)}><span className="register-subnav-icon"><Icon name={item.icon} size={18} /></span><span><strong>{item.label}</strong></span></button>)}</nav><section className="register-panel">{mode === "text" && <RegisterTextPanel copy={copy} prefill={prefill} onSubmit={onSubmit} />}{mode === "photo" && 
-    <RegisterCapturePanel title="Toma una foto al producto" description="Enfoca el producto dentro del recuadro." capture={<PhotoCapture photoName={photoName} setPhotoName={setPhotoName} />} onSubmit={onSubmit} prefill={prefill} />}{mode === "scan" && <RegisterCapturePanel title="Escanea el código de barras" description="Enfoca el código del producto o escríbelo manualmente." capture={<BarcodeCapture barcode={barcode} setBarcode={setBarcode} onExample={() => { setBarcode("7750182003412"); setPrefill(true); }} />} onSubmit={onSubmit} prefill={prefill} />}{mode === "voice" && <RegisterCapturePanel title="Registra con tu voz" description="Toca el micrófono y dicta los datos del producto." capture={<VoiceCapture captured={voiceCaptured} onCapture={() => { setVoiceCaptured(true); setPrefill(true); }} />} onSubmit={onSubmit} prefill={prefill} />}{mode === "search" && <RegisterSearchPanel products={matchingProducts} search={search} onSearch={setSearch} onSelect={selectPastProduct} />}</section></div></div>;
+    <h1>Registrar producto</h1><p className="welcome-subtitle">{copy.registerSubtitle}</p></div></section><div className="register-workspace"><nav className="register-subnav" aria-label="Métodos para registrar producto">{registerModes.map((item) => <button type="button" className={mode === item.id ? "active" : ""} key={item.id} onClick={() => changeMode(item.id)}><span className="register-subnav-icon"><Icon name={item.icon} size={18} /></span><span><strong>{item.label}</strong></span></button>)}</nav><section className="register-panel">{mode === "text" && <RegisterTextPanel copy={copy} suggestion={suggestion} onSubmit={onSubmit} />}{mode === "photo" && 
+    <RegisterCapturePanel title="Toma una foto al producto" description="Enfoca el producto dentro del recuadro." capture={<PhotoCapture photoName={photoName} setPhotoName={setPhotoName} onSuggestion={setSuggestion} />} onSubmit={onSubmit} suggestion={suggestion} />}{mode === "scan" && <RegisterCapturePanel title="Escanea el código de barras" description="Enfoca el código del producto o escríbelo manualmente." capture={<BarcodeCapture barcode={barcode} setBarcode={setBarcode} onDetected={applyBarcode} />} onSubmit={onSubmit} suggestion={suggestion} barcode={barcode} />}{mode === "voice" && <RegisterCapturePanel title="Registra con tu voz" description="Toca el micrófono y dicta los datos del producto." capture={<VoiceCapture onSuggestion={setSuggestion} />} onSubmit={onSubmit} suggestion={suggestion} />}{mode === "search" && <RegisterSearchPanel products={matchingProducts} search={search} onSearch={setSearch} onSelect={selectPastProduct} />}</section></div></div>;
 }
 
-function RegisterTextPanel({ copy, prefill, onSubmit }) {
+function RegisterTextPanel({ copy, suggestion, onSubmit }) {
   return <div className="register-mode-content"><div className="register-mode-heading"><span className="register-mode-icon mode-mint"><Icon name="edit" size={24} /></span><div>
     {/* <span className="section-kicker">REGISTRO MANUAL</span> */}
-    <h2>Escribe los datos del producto</h2><p>{copy.registerFormHint}</p></div></div><ProductForm prefill={prefill} onSubmit={onSubmit} onClose={() => {}} /></div>;
+    <h2>Escribe los datos del producto</h2><p>{copy.registerFormHint}</p></div></div><ProductForm key={JSON.stringify(suggestion)} suggestion={suggestion} onSubmit={onSubmit} onClose={() => {}} /></div>;
 }
 
-function RegisterCapturePanel({ title, description, capture, onSubmit, prefill }) {
+function RegisterCapturePanel({ title, description, capture, onSubmit, suggestion, barcode }) {
   return <div className="register-mode-content"><div className="register-mode-heading"><span className="register-mode-icon mode-peach"><Icon name="camera" size={24} /></span><div>
     {/* <span className="section-kicker">CAPTURA ASISTIDA</span> */}
-    <h2>{title}</h2><p>{description}</p></div></div><div className="register-capture-area">{capture}</div><ProductForm prefill={prefill} onSubmit={onSubmit} onClose={() => {}} /></div>;
+    <h2>{title}</h2><p>{description}</p></div></div><div className="register-capture-area">{capture}</div><ProductForm key={JSON.stringify(suggestion)} suggestion={suggestion} barcode={barcode} onSubmit={onSubmit} onClose={() => {}} /></div>;
 }
 
 function RegisterSearchPanel({ products, search, onSearch, onSelect }) {

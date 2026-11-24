@@ -38,15 +38,26 @@ export const navigation = [
   { id: "home", label: "Inicio", icon: "home" },
   { id: "inventory", label: "Inventario", icon: "box" },
   { id: "register", label: "Registrar", icon: "plus" },
+  { id: "sales", label: "Ventas", icon: "trending" },
   { id: "alerts", label: "Vencimientos", icon: "calendar" },
   { id: "employees", label: "Empleados", icon: "shield", jefeOnly: true },
+  { id: "stock", label: "Stock en vivo", icon: "box", clienteOnly: true },
 ];
 
 export const mobileNavigation = [
   { id: "home", label: "Inicio", icon: "home" },
   { id: "inventory", label: "Inventario", icon: "box" },
   { id: "register", label: "Registrar", icon: "plus" },
-  { id: "alerts", label: "Vencimientos", icon: "calendar" },
-  { id: "employees", label: "Empleados", icon: "shield", jefeOnly: true },
+  { id: "sales", label: "Ventas", icon: "trending" },
+  { id: "alerts", label: "Alertas", icon: "calendar" },
+  { id: "employees", label: "Equipo", icon: "shield", jefeOnly: true },
+  { id: "stock", label: "Stock", icon: "box", clienteOnly: true },
   { id: "profile", label: "Perfil", icon: "users", empleadoOnly: true },
+];
+
+// Cuentas ficticias para revisar cada rol en desarrollo, sin registrarse.
+export const demoAccounts = [
+  { id: "user-jefe", role: "jefe", name: "Jefe Demo", nombres: "Jefe", apellidos: "Demo", email: "jefe@demo.example", store: "Bodega San Martín", demo: true, label: "Jefe" },
+  { id: "emp-demo", role: "empleado", name: "Empleado Demo", nombres: "Empleado", apellidos: "Demo", email: "empleado@demo.example", store: "Bodega San Martín", demo: true, label: "Empleado" },
+  { id: "cli-demo", role: "cliente", name: "Cliente Demo", nombres: "Cliente", apellidos: "Demo", email: "cliente@demo.example", store: "Bodega San Martín", demo: true, label: "Cliente" },
 ];

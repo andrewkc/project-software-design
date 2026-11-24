@@ -1,0 +1,54 @@
+.customer-heading { align-items: center; }
+.live-badge { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; padding: 7px 12px; border-radius: 20px; color: #2c6646; background: #e6f0e3; font-size: 13px; font-weight: 700; }
+.live-badge i { width: 8px; height: 8px; border-radius: 50%; background: #397a55; animation: live-dot 1.6s ease-in-out infinite; }
+.customer-tools { display: grid; gap: 12px; margin-bottom: 18px; }
+.customer-search { width: min(100%, 420px); height: 42px; background: #fff; }
+.customer-search input { font-size: 14px; background: transparent; }
+.customer-categories { display: flex; gap: 6px; padding-bottom: 3px; overflow-x: auto; }
+.customer-categories button { flex: 0 0 auto; padding: 7px 12px; border: 1px solid #e3e8e1; border-radius: 18px; color: #565f57; background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+.customer-categories button:hover, .customer-categories button.active { color: #fff; border-color: #397a55; background: #397a55; }
+.stock-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(205px, 1fr)); gap: 12px; }
+.stock-tile { display: grid; gap: 3px; min-width: 0; padding: 14px; border: 1px solid #ecefe8; border-radius: 12px; background: #fff; transition: border-color .25s, box-shadow .25s; }
+.stock-tile-out { background: #fafaf7; }
+.stock-tile-out h2, .stock-tile-out .stock-tile-count strong { color: #858c84; }
+.stock-tile-changed { border-color: #397a55; box-shadow: 0 0 0 3px #397a5526; animation: tile-flash .7s ease-out; }
+.stock-tile-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 7px; }
+.stock-state { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.stock-state-ok { color: #2c6646; background: #e6f0e3; }
+.stock-state-low { color: #8a5f25; background: #fff1dc; }
+.stock-state-out { color: #8d3a29; background: #fbeeeb; }
+.stock-tile h2 { margin: 0; overflow: hidden; color: #263029; font: 700 16px "Manrope", sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.stock-tile small { color: #858c84; font-size: 12px; }
+.stock-tile-count { display: flex; align-items: baseline; gap: 5px; margin-top: 7px; }
+.stock-tile-count strong { color: #263029; font: 800 32px/1 "Manrope", sans-serif; font-variant-numeric: tabular-nums; }
+.stock-tile-count span { color: #6f776f; font-size: 13px; }
+.stock-tile-count em { margin-left: auto; padding: 2px 7px; border-radius: 10px; color: #fff; background: #397a55; font-size: 13px; font-style: normal; font-weight: 800; }
+.stock-tile > b { margin-top: 5px; color: #397a55; font-size: 15px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.account-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin-top: 14px; border-radius: 10px; background: #eef2ea; }
+.account-kind button { padding: 9px; border: 0; border-radius: 7px; color: #6f776f; background: transparent; font-size: 14px; font-weight: 700; cursor: pointer; }
+.account-kind button.active { color: #2c6646; background: #fff; box-shadow: 0 1px 4px #25321e1a; }
+.signup-form select { width: 100%; height: 46px; padding: 0 13px; color: var(--ink); border: 1px solid #e1e6df; border-radius: 9px; background: #fff; font-size: 16px; }
+.demo-access { display: grid; gap: 8px; margin-top: 16px; }
+.demo-access > span { color: #858c84; font-size: 13px; text-align: center; }
+.demo-access div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.demo-access button { min-width: 0; padding: 9px 4px; border: 1px solid #dfe6dc; border-radius: 8px; color: #397a55; background: #f6faf4; font-size: 14px; font-weight: 700; cursor: pointer; }
+.demo-access button:hover { background: #e6f0e3; }
+
+.mobile-nav[data-count="2"] { grid-template-columns: repeat(2, 1fr); }
+.mobile-nav[data-count="6"] { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 720px) {
+  .customer-page { padding-bottom: 96px; }
+  .stock-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .stock-tile { padding: 11px; }
+  .stock-tile h2 { font-size: 14px; white-space: normal; }
+  .stock-tile-count strong { font-size: 27px; }
+  .stock-state { padding: 3px 6px; font-size: 11px; }
+  .mobile-nav[data-count="6"] button { font-size: 9px; }
+}
+@keyframes live-dot { 50% { opacity: .35; } }
+@keyframes tile-flash { from { background: #dcecd9; } }
+@media (prefers-reduced-motion: reduce) {
+  .live-badge i, .stock-tile-changed { animation: none; }
+}

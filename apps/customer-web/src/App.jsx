@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { OperationsLayout } from "./components/layout/OperationsLayout";
 import { readSaved } from "./lib/storage";
-import { starterProducts, productMethods } from "./data/demoData";
+import { demoAccounts, starterProducts, productMethods } from "./data/demoData";
 import { useInventorySummary } from "./hooks/useInventorySummary";
 import { AuthScreen } from "./features/auth/AuthScreen";
 import { HomePage } from "./features/home/HomePage";
@@ -13,12 +13,39 @@ import { ProductModal } from "./features/products/ProductModal";
 import { RegisterPage } from "./features/register/RegisterPage";
 import { Icon } from "./components/Icon";
 import { EmployeesPage } from "./features/employees/EmployeesPage";
-import { JEFE_ID, currentUserId, isJefe, withProductDefaults, withUserDefaults } from "./lib/permissions";
+import { SalesPage } from "./features/sales/SalesPage";
+import { CustomerStockPage } from "./features/customer/CustomerStockPage";
+import { JEFE_ID, currentUserId, isCliente, isJefe, withProductDefaults, withUserDefaults } from "./lib/permissions";
+import { subscribeToKeys } from "./lib/liveStock";
+import { registerSale, SaleError } from "./lib/sales";
 import { findProfileByEmail, listProfiles, saveProfile, updateProfile } from "./lib/profileDb";
 import { workspaceCopy } from "./lib/workspaceCopy";
 
+const LIVE_KEYS = ["bodega-products", "bodega-movements", "bodega-employees"];
+const DEFAULT_STORE = "Bodega San Martín";
+const homeTab = (profile) => isCliente(profile) ? "stock" : "home";
+
+// La sesión vive por pestaña: así jefe y cliente pueden verse a la vez en el mismo navegador.
+function readSessionUser() {
+  try {
+    return withUserDefaults(JSON.parse(sessionStorage.getItem("bodega-session-user")));
+  } catch {
+    return null;
+  }
+}
+
+function readSavedProducts() {
+  const saved = readSaved("bodega-products", []);
+  return Array.isArray(saved) ? saved.map(withProductDefaults) : [];
+}
+
+function savedClients() {
+  const saved = readSaved("bodega-clients", []);
+  return Array.isArray(saved) ? saved : [];
+}
+
 function App() {
-  const [user, setUser] = useState(() => withUserDefaults(readSaved("bodega-user", null)));
+  const [user, setUser] = useState(readSessionUser);
   const [products, setProducts] = useState(() => {
     const savedProducts = readSaved("bodega-products", starterProducts);
     const isLegacyDemo = Array.isArray(savedProducts) && savedProducts.length <= 20 && savedProducts.every((product) => product.id >= 1 && product.id <= 20);
@@ -34,14 +61,13 @@ function App() {
     const saved = readSaved("bodega-movements", []);
     return Array.isArray(saved) ? saved : [];
   });
-  const [screen, setScreen] = useState(() => sessionStorage.getItem("bodega-screen") === "app" ? "app" : "auth");
+  const [screen, setScreen] = useState(() => sessionStorage.getItem("bodega-screen") === "app" && readSessionUser() ? "app" : "auth");
   const [authMode, setAuthMode] = useState("login");
   const [authBusy, setAuthBusy] = useState(false);
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState(() => homeTab(readSessionUser()));
   const [method, setMethod] = useState(null);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
-  const [voiceCaptured, setVoiceCaptured] = useState(false);
   const [photoName, setPhotoName] = useState("");
   const [barcode, setBarcode] = useState("");
   const { expiringProducts, stockTotal, categoryTotals, stockSeries } = useInventorySummary(products);
@@ -62,8 +88,17 @@ function App() {
     return () => { active = false; };
   }, []);
   useEffect(() => localStorage.setItem("bodega-products", JSON.stringify(products)), [products]);
-  useEffect(() => { if (user) localStorage.setItem("bodega-user", JSON.stringify(user)); }, [user]);
-  useEffect(() => { if (user && isJefe(user)) { localStorage.setItem("bodega-jefe", JSON.stringify(user)); setJefeProfile(user); } }, [user]);
+  useEffect(() => {
+    if (user) sessionStorage.setItem("bodega-session-user", JSON.stringify(user));
+    else sessionStorage.removeItem("bodega-session-user");
+  }, [user]);
+  useEffect(() => subscribeToKeys(LIVE_KEYS, (key, value) => {
+    if (!Array.isArray(value)) return;
+    if (key === "bodega-products") setProducts(value.map(withProductDefaults));
+    if (key === "bodega-movements") setMovements(value);
+    if (key === "bodega-employees") setEmployees(value);
+  }), []);
+  useEffect(() => { if (user && isJefe(user) && !user.demo) { localStorage.setItem("bodega-jefe", JSON.stringify(user)); setJefeProfile(user); } }, [user]);
   useEffect(() => localStorage.setItem("bodega-employees", JSON.stringify(employees)), [employees]);
   useEffect(() => localStorage.setItem("bodega-movements", JSON.stringify(movements)), [movements]);
   useEffect(() => { sessionStorage.setItem("bodega-screen", screen); }, [screen]);
@@ -82,9 +117,10 @@ function App() {
       setToast("Ingresa tus nombres y apellidos.");
       return;
     }
+    const role = data.get("role") === "cliente" ? "cliente" : "jefe";
     const profile = withUserDefaults({
-      id: JEFE_ID,
-      role: "jefe",
+      id: role === "cliente" ? `cli-${Date.now()}` : JEFE_ID,
+      role,
       name: `${nombres} ${apellidos}`.trim(),
       nombres,
       apellidos,
@@ -108,9 +144,11 @@ function App() {
       try {
         await saveProfile(profile);
       } catch {
-        localStorage.setItem("bodega-jefe", JSON.stringify(profile));
+        if (role === "cliente") localStorage.setItem("bodega-clients", JSON.stringify([...savedClients(), profile]));
+        else localStorage.setItem("bodega-jefe", JSON.stringify(profile));
       }
       setUser(profile);
+      setActiveTab(homeTab(profile));
       setScreen("app");
     setToast(`\u00a1Bienvenido${profile.name ? `, ${profile.name.split(" ")[0]}` : ""}! Tu bodega est\u00e1 lista.`);
     } finally {
@@ -133,24 +171,21 @@ function App() {
       }
       if (!account) {
         const savedEmployees = readSaved("bodega-employees", []);
-        account = Array.isArray(savedEmployees) ? savedEmployees.find((employee) => employee.email.toLowerCase() === email) : null;
+        const savedJefe = readSaved("bodega-jefe", null);
+        const local = [...(Array.isArray(savedEmployees) ? savedEmployees : []), ...savedClients(), ...(savedJefe ? [savedJefe] : [])];
+        account = local.find((item) => item.email?.toLowerCase() === email) || null;
       }
-      let profile;
-      if (account) {
-        if (account.activo === false) {
-          setToast("Esa cuenta ya no tiene acceso a la bodega.");
-          return;
-        }
-        if (account.password && password !== account.password) {
-          setToast("Correo o contraseña incorrectos.");
-          return;
-        }
-        profile = withUserDefaults(account);
-      } else {
-        const jefe = readSaved("bodega-jefe", null);
-        profile = withUserDefaults(jefe || { id: JEFE_ID, role: "jefe", name: "Kelvin Cahuana", email, store: "Bodega San Mart\u00edn" });
+      if (!account || password !== account.password) {
+        setToast("Correo o contraseña incorrectos.");
+        return;
       }
+      if (account.activo === false) {
+        setToast("Esa cuenta ya no tiene acceso a la bodega.");
+        return;
+      }
+      const profile = withUserDefaults(account);
       setUser(profile);
+      setActiveTab(homeTab(profile));
       setScreen("app");
     setToast(`\u00a1Bienvenido${profile.name ? `, ${profile.name.split(" ")[0]}` : ""}!`);
     } finally {
@@ -159,14 +194,41 @@ function App() {
   }
 
   function handleLogout() {
+    setUser(null);
     setScreen("auth");
     setAuthMode("login");
     setActiveTab("home");
   }
 
+  function enterDemo(account) {
+    const profile = withUserDefaults(account);
+    setUser(profile);
+    setActiveTab(homeTab(profile));
+    setScreen("app");
+  }
+
+  function submitSale(cart) {
+    // Se relee el stock guardado para no vender sobre datos viejos si otra pestaña acaba de vender.
+    const latest = readSavedProducts();
+    try {
+      const result = registerSale(latest.length ? latest : products, cart, user);
+      const saved = readSaved("bodega-movements", []);
+      const nextMovements = [result.movement, ...(Array.isArray(saved) ? saved : [])];
+      localStorage.setItem("bodega-products", JSON.stringify(result.products));
+      localStorage.setItem("bodega-movements", JSON.stringify(nextMovements));
+      setProducts(result.products);
+      setMovements(nextMovements);
+      setToast(`Venta registrada por S/ ${result.movement.total.toFixed(2)}.`);
+      return { ok: true };
+    } catch (error) {
+      if (!(error instanceof SaleError)) throw error;
+      if (latest.length) setProducts(latest);
+      return { ok: false, error: error.message };
+    }
+  }
+
   function openMethod(id) {
     setMethod(id);
-    setVoiceCaptured(false);
     setPhotoName("");
     setBarcode("");
   }
@@ -176,10 +238,10 @@ function App() {
     const data = new FormData(event.currentTarget);
     const name = data.get("productName").trim();
     const quantity = Number(data.get("quantity"));
-    if (!name || quantity < 1) return;
+    if (!name || !(quantity > 0)) return;
     const category = data.get("category");
     const icon = String(data.get("icon") || "").trim() || (category === "Frutas" ? "\u{1F34E}" : category === "L\u00e1cteos" ? "\u{1F95B}" : "\u{1F4E6}");
-    setProducts((current) => [{ id: Date.now(), name, category, icon, stock: quantity, unit: data.get("unit"), price: Number(data.get("price")) || 0, expires: data.get("expires") || "", creadoPor: currentUserId(user), bloqueado: false, bloqueadoPor: null, activo: true }, ...current]);
+    setProducts((current) => [{ id: Date.now(), name, category, icon, stock: quantity, unit: data.get("unit"), price: Number(data.get("price")) || 0, expires: data.get("expires") || "", barcode: String(data.get("barcode") || "").trim(), creadoPor: currentUserId(user), bloqueado: false, bloqueadoPor: null, activo: true }, ...current]);
     setMethod(null);
     setActiveTab("inventory");
     setToast(`${name} se agregó a ${workspaceCopy(user).addedTarget}.`);
@@ -297,18 +359,23 @@ function App() {
     return true;
   }
 
-  if (screen === "auth") return <AuthScreen mode={authMode} busy={authBusy} onModeChange={setAuthMode} onLogin={finishLogin} onSignup={finishSignup} onForgotPassword={() => setToast("La recuperaci\u00f3n de contrase\u00f1a estar\u00e1 disponible pronto.")} />;
+  if (screen === "auth") return <AuthScreen mode={authMode} busy={authBusy} stores={[...new Set([jefeProfile?.store, DEFAULT_STORE].filter(Boolean))]} demoAccounts={import.meta.env.DEV ? demoAccounts : []} onDemoLogin={enterDemo} onModeChange={setAuthMode} onLogin={finishLogin} onSignup={finishSignup} onForgotPassword={() => setToast("La recuperaci\u00f3n de contrase\u00f1a estar\u00e1 disponible pronto.")} />;
   return <>
     <OperationsLayout user={user} activeTab={activeTab} expiringCount={expiringProducts.length} onNavigate={setActiveTab} onRegister={() => setActiveTab("register")} onLogout={handleLogout}>
+      {isCliente(user) ? <>
+        {activeTab === "profile" ? <ProfilePage user={user} onLogout={handleLogout} onChangePassword={changeEmployeePassword} /> : <CustomerStockPage products={products} user={user} />}
+      </> : <>
       {activeTab === "home" && <HomePage user={user} products={products} expiringProducts={expiringProducts} stockTotal={stockTotal} stockSeries={stockSeries} categoryTotals={categoryTotals} maxCategoryTotal={maxCategoryTotal} onRegister={() => setActiveTab("register")} onNavigate={setActiveTab} />}
       {activeTab === "inventory" && <InventoryPage products={products} filteredProducts={filteredProducts} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} user={user} employees={employees} jefeProfile={jefeProfile} onUpdateProduct={updateProduct} onSetProductActive={setProductActive} onToggleLock={toggleProductLock} onRegister={() => openMethod("text")} />}
       {activeTab === "register" && <RegisterPage products={products} user={user} onSubmit={addProduct} />}
+      {activeTab === "sales" && <SalesPage products={products} movements={movements} user={user} onRegisterSale={submitSale} />}
       {activeTab === "alerts" && <AlertsPage expiringProducts={expiringProducts} />}
       {activeTab === "insights" && <InsightsPage />}
       {activeTab === "employees" && <EmployeesPage employees={employees} movements={movements} onCreateEmployee={createEmployee} onRevokeEmployee={revokeEmployee} />}
       {activeTab === "profile" && <ProfilePage user={user} onLogout={handleLogout} onChangePassword={changeEmployeePassword} />}
+      </>}
     </OperationsLayout>
-    {method && <ProductModal method={productMethods.find((item) => item.id === method)} user={user} onClose={() => setMethod(null)} onSubmit={addProduct} voiceCaptured={voiceCaptured} setVoiceCaptured={setVoiceCaptured} photoName={photoName} setPhotoName={setPhotoName} barcode={barcode} setBarcode={setBarcode} />}
+    {method && <ProductModal method={productMethods.find((item) => item.id === method)} user={user} onClose={() => setMethod(null)} onSubmit={addProduct} photoName={photoName} setPhotoName={setPhotoName} barcode={barcode} setBarcode={setBarcode} />}
     {toast && <div className="toast-message" role="status"><span><Icon name="check" size={17} /></span>{toast}</div>}
   </>;
 }
