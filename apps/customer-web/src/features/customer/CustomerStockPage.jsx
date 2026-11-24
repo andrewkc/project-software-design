@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "../../components/Icon";
 import { EmptyState } from "../../components/common/InventoryRows";
 import { customerCatalog, stockChanges } from "../../lib/liveStock";
-import { addToCart, cartTotal, setCartQuantity } from "../../lib/sales";
+import { addWithinStock, cartTotal, setCartQuantity } from "../../lib/sales";
 import { fold } from "../../lib/textTools";
+import { soles, stepFor, timeLabel } from "../../lib/format";
 import "../sales/sales.css";
 import "./customer.css";
 
@@ -19,9 +20,6 @@ const ORDER_STATUS = {
   rechazado: { label: (order) => `Rechazado: ${order.motivoRechazo}`, tone: "out" },
   cancelado: { label: () => "Cancelado", tone: "muted" },
 };
-const soles = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
-const stepFor = (unit) => (["kg", "litro"].includes(unit) ? 0.5 : 1);
-const timeLabel = (value) => new Date(value).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
 // El carrito sobrevive a cambiar de pantalla o recargar; si el almacenamiento falla, solo vive en memoria.
 function readCart(key) {
@@ -86,16 +84,9 @@ export function CustomerStockPage({ products, user, orders = [], onPlaceOrder, o
   }, [catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function addProduct(product) {
-    const inCart = cart.find((line) => line.productId === product.id)?.quantity || 0;
-    const stock = Number(product.stock);
-    const step = stepFor(product.unit);
-    if (inCart + step > stock) {
-      setError(`Solo quedan ${stock} ${product.unit} de ${product.name}.`);
-      if (stock > inCart) setCart(addToCart(cart, product.id, stock - inCart));
-      return;
-    }
-    setError("");
-    setCart(addToCart(cart, product.id, step));
+    const result = addWithinStock(cart, product, stepFor(product.unit));
+    setError(result.capped ? `Solo quedan ${product.stock} ${product.unit} de ${product.name}.` : "");
+    setCart(result.cart);
   }
 
   function changeQuantity(product, value) {

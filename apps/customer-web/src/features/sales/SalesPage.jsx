@@ -5,15 +5,13 @@ import { VoiceInput } from "../../components/common/VoiceInput";
 import { PageDate } from "../../components/layout/PageDate";
 import { BarcodeCapture } from "../products/ProductModal";
 import { isJefe } from "../../lib/permissions";
-import { addToCart, cartTotal, saleBlockReason, setCartQuantity } from "../../lib/sales";
+import { addWithinStock, cartTotal, saleBlockReason, setCartQuantity } from "../../lib/sales";
 import { parseSaleSpeech } from "../../lib/voiceParser";
 import { fold } from "../../lib/textTools";
+import { soles, stepFor, timeLabel } from "../../lib/format";
 import "./sales.css";
 
 const RECENT_LIMIT = 8;
-const soles = (value) => `S/ ${Number(value || 0).toFixed(2)}`;
-const stepFor = (unit) => (["kg", "litro"].includes(unit) ? 0.5 : 1);
-const timeLabel = (value) => new Date(value).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
 // Pedidos de clientes: aceptar registra la venta con el mismo control de stock; rechazar exige un motivo.
 function OrderInbox({ orders, onAccept, onReject }) {
@@ -68,13 +66,9 @@ export function SalesPage({ products, movements, user, onRegisterSale, pendingOr
     .slice(0, RECENT_LIMIT), [movements, user]);
 
   function addCapped(current, product, quantity) {
-    const inCart = current.find((line) => line.productId === product.id)?.quantity || 0;
-    const stock = Number(product.stock);
-    if (inCart + quantity > stock) {
-      setError(`Solo hay ${stock} ${product.unit} de ${product.name}.`);
-      return stock > inCart ? addToCart(current, product.id, stock - inCart) : current;
-    }
-    return addToCart(current, product.id, quantity);
+    const result = addWithinStock(current, product, quantity);
+    if (result.capped) setError(`Solo hay ${product.stock} ${product.unit} de ${product.name}.`);
+    return result.cart;
   }
 
   function addProduct(product, quantity = stepFor(product.unit)) {

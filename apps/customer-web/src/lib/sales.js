@@ -23,6 +23,14 @@ export function addToCart(cart, productId, quantity = 1) {
   return cart.map((line) => line === current ? { ...line, quantity: quantityValue(line.quantity + quantity) } : line);
 }
 
+// Agrega sin pasar el stock: si no alcanza, completa hasta el máximo y avisa con capped.
+export function addWithinStock(cart, product, quantity) {
+  const inCart = cart.find((line) => line.productId === product.id)?.quantity || 0;
+  const stock = Number(product.stock);
+  if (inCart + quantity <= stock) return { cart: addToCart(cart, product.id, quantity), capped: false };
+  return { cart: stock > inCart ? addToCart(cart, product.id, quantityValue(stock - inCart)) : cart, capped: true };
+}
+
 export function setCartQuantity(cart, productId, quantity) {
   if (!Number.isFinite(quantity) || quantity <= 0) return cart.filter((line) => line.productId !== productId);
   return cart.map((line) => line.productId === productId ? { ...line, quantity } : line);
