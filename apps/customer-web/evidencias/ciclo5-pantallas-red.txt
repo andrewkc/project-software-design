@@ -1,0 +1,4 @@
+﻿Error: Failed to resolve import "./CustomerStockPage" from "src/features/customer/CustomerStockPage.test.jsx". Does the file exist?
+Error: Failed to resolve import "./SalesPage" from "src/features/sales/SalesPage.test.jsx". Does the file exist?
+ Test Files  2 failed | 4 passed (6)
+      Tests  55 passed (55)
