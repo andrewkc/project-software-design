@@ -45,6 +45,59 @@ La IA apoya la decisión. Nunca aprueba promociones, genera compras ni modifica 
 
 El prototipo de operations-web ya cubre el registro de productos, el inventario con ID por fila, el bloqueo y la desactivación, la creación de empleados con contraseña generada y la persistencia de perfiles en SQLite dentro del navegador. Las reglas de roles, propiedad y bloqueo, y la persistencia en SQLite están registradas como decisiones propuestas y aplicadas al prototipo. No son requisitos aprobados para producción.
 
+## Despliegue con Docker Compose
+
+`docker-compose.yml` levanta los tres servicios que hoy se gestionan a mano: `database`, `backend` y `operations-web`. El dominio `app.bodesmart.online` corresponde a **operations-web**; `customer-web` sigue fuera del MVP documentado.
+
+El compose define `build` e `image` para cada servicio: sirve para construir en local y para bajar las imágenes ya publicadas en el EC2. Las diferencias entre ambos entornos van en `.env` (ignorado por Git). Copiar `.env.example` a `.env` y completar los valores reales.
+
+Si quedaron contenedores creados manualmente, sacarlos una sola vez:
+
+```bash
+docker rm -f database backend operations-web
+```
+
+### En local
+
+```powershell
+Copy-Item .env.example .env
+# en .env, usar el bloque "Local con Vite, sin nginx": comentar
+# VITE_API_BASE_URL=https://api.bodesmart.online y poner VITE_API_BASE_URL=http://localhost:8000
+docker compose down -v
+docker compose up -d --build
+```
+
+Queda en `http://127.0.0.1:5173` y la API en `http://127.0.0.1:8000/health`.
+
+### Publicar imágenes
+
+Después de probar en local, **volver a dejar `.env` con el bloque EC2** (`FRONTEND_DOCKERFILE=Dockerfile` y `VITE_API_BASE_URL=https://api.bodesmart.online`) y reconstruir el frontend: la URL de la API se hornea en el build de Vite, así que un build local publicado dejaría el sitio apuntando a `localhost:8000`.
+
+```powershell
+docker compose config --quiet
+docker compose config | Select-String "dockerfile:|VITE_API_BASE_URL|image:"
+docker compose build
+docker compose push
+```
+
+Para publicar solo lo que cambió: `docker compose build operations-web` y `docker compose push operations-web` (o `backend` / `database`).
+
+### En el EC2
+
+```bash
+docker compose pull
+docker compose down -v
+docker compose up -d
+```
+
+El nginx del host no cambia: `app.bodesmart.online` sigue haciendo proxy a `127.0.0.1:3002` y `api.bodesmart.online` a `127.0.0.1:8000`.
+
+### Volumen de la base
+
+`docker compose down -v` borra el volumen `bodesmart-db` y `up` crea uno nuevo, así que `seed.sql` se ejecuta desde cero. Eso elimina jefes, empleados y productos creados. Después del seed hay que registrar el jefe desde la pantalla de registro con el nombre de bodega exacto `Bodega San Martín` para conservar los 26 productos sembrados.
+
+Para ver logs: `docker compose logs -f backend`. Para el estado: `docker compose ps`.
+
 ## Lo que queda fuera del MVP
 
 No se incluyen proveedores, pagos, facturación electrónica, entregas, contabilidad, estimación de vida útil por IA ni vista de compradores. El prototipo muestra pantallas de ejemplo para registro por foto, código, texto y voz, pero esas modalidades no forman parte del MVP documentado.

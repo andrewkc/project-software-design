@@ -18,3 +18,7 @@ __pycache__/
 # Unnecessary
 templates/
 apps/key-instance-01.pem
+
+# Local environment files (secrets)
+.env
+!.env.example
