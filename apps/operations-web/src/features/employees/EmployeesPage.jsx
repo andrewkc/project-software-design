@@ -3,7 +3,7 @@ import { Icon } from "../../components/Icon";
 import { PageDate } from "../../components/layout/PageDate";
 import { generatePassword } from "../../lib/accountSecurity";
 
-export function EmployeesPage({ employees, movements, onCreateEmployee, onRevokeEmployee }) {
+export function EmployeesPage({ employees, onCreateEmployee, onRevokeEmployee }) {
   const [password, setPassword] = useState(() => generatePassword());
   const [credentials, setCredentials] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -12,13 +12,13 @@ export function EmployeesPage({ employees, movements, onCreateEmployee, onRevoke
   const activeEmployees = employees.filter((employee) => employee.activo !== false);
   const revokedEmployees = employees.filter((employee) => employee.activo === false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     const data = new FormData(event.currentTarget);
     const nombres = String(data.get("nombres") || "").trim();
     const apellidos = String(data.get("apellidos") || "").trim();
     const name = `${nombres} ${apellidos}`.trim();
     const email = String(data.get("email") || "").trim().toLowerCase();
-    if (!onCreateEmployee(event, password)) return;
+    if (!await onCreateEmployee(event, password)) return;
     setCredentials({ name, email, password });
     setCopied(false);
     setShowPassword(false);
@@ -85,16 +85,6 @@ export function EmployeesPage({ employees, movements, onCreateEmployee, onRevoke
           </div>)}
         </div>
       </div>}
-    </section>
-    <section className="content-card employees-card">
-      <h2>Ajustes de stock recientes</h2>
-      <div className="employee-list">
-        {movements.slice(0, 8).map((movement) => <div className="employee-row" key={movement.id}>
-          <span className="employee-info"><strong>{movement.productoNombre}</strong><small>{movement.responsableNombre} &middot; {new Date(movement.fechaHora).toLocaleString("es-PE")}</small></span>
-          <span className={`movement-delta ${movement.diferencia > 0 ? "positive" : "negative"}`}>{movement.diferencia > 0 ? "+" : ""}{movement.diferencia}</span>
-        </div>)}
-        {movements.length === 0 && <p className="employees-empty">Todav&iacute;a no se registraron ajustes de stock.</p>}
-      </div>
     </section>
   </div>;
 }

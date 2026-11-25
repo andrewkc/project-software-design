@@ -27,21 +27,28 @@ CREATE TABLE Empleado (
     FOREIGN KEY (id_jefe) REFERENCES Jefe(id)
 );
 
+-- The product is the catalog: it involves no inventory or warehouse storage.
 CREATE TABLE Producto (
     id SERIAL PRIMARY KEY,
     icono VARCHAR(100),
     nombre VARCHAR(100) NOT NULL,
     categoria VARCHAR(100),
-    unidad_medida VARCHAR(50),
+    unidad_medida VARCHAR(50)
+);
+
+-- Inventory by warehouse: one row per product in each warehouse.
+CREATE TABLE ProductosBodega (
+    id_producto INT NOT NULL,
+    id_bodega INT NOT NULL,
     stock INT NOT NULL DEFAULT 0,
     precio_venta DECIMAL(10,2) NOT NULL,
     fecha_vencimiento DATE,
     estado VARCHAR(50) NOT NULL,
-    id_bodega INT NOT NULL,
 
-    FOREIGN KEY (id_bodega) REFERENCES Bodega(id),
+    PRIMARY KEY (id_producto, id_bodega),
 
-    UNIQUE (id_bodega, nombre)
+    FOREIGN KEY (id_producto) REFERENCES Producto(id),
+    FOREIGN KEY (id_bodega) REFERENCES Bodega(id)
 );
 
 CREATE TABLE Admin (

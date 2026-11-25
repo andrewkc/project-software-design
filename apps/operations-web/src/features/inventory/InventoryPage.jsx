@@ -69,9 +69,12 @@ export function InventoryPage({ products, expiringProducts, query, onQueryChange
     if (product.creadoPor === userId) return "Agregado por usted";
     const employee = employees.find((item) => item.id === product.creadoPor);
     if (employee) return `Agregado por ${profileNames(employee).displayName}`;
-    const jefe = jefeProfile || (isJefe(user) ? user : null);
-    if (jefe && (product.creadoPor === jefe.id || product.creadoPor === JEFE_ID)) {
-      return `Agregado por ${profileNames(jefe).displayName}`;
+    const owner = jefeProfile || (isJefe(user) ? user : null);
+    if (product.creadoPor === null || product.creadoPor === undefined) {
+      return owner ? `Agregado por ${profileNames(owner).displayName}` : "Agregado por el jefe";
+    }
+    if (owner && (product.creadoPor === owner.id || product.creadoPor === JEFE_ID)) {
+      return `Agregado por ${profileNames(owner).displayName}`;
     }
     return "Agregado por empleado retirado";
   }

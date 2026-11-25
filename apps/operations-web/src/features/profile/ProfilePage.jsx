@@ -14,14 +14,14 @@ export function ProfilePage({ user, onLogout, onChangePassword }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  function handlePasswordChange(event) {
+  async function handlePasswordChange(event) {
     event.preventDefault();
     if (newPassword !== confirmPassword) {
       setError("Las contraseñas nuevas no coinciden.");
       return;
     }
     setError("");
-    if (onChangePassword(currentPassword, newPassword)) {
+    if (await onChangePassword(currentPassword, newPassword)) {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");

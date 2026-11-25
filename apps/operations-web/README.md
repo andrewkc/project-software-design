@@ -1,6 +1,6 @@
 # BodegaSmart — prototipo frontend de operaciones
 
-Prototipo adaptable a escritorio y móvil para la gestión interna de una bodega. Es la app que usan el **jefe** y el **empleado** en `app.bodesmart.com`. Toda la información se guarda en el navegador: los perfiles en SQLite dentro del navegador (`sql.js`) y el resto en `localStorage`. No hay backend conectado todavía.
+Prototipo adaptable a escritorio y móvil para la gestión interna de una bodega. Es la app que usan el **jefe** y el **empleado** en `app.bodesmart.com`. Ahora consume una API HTTP: el token se guarda en `localStorage` y los datos viven en PostgreSQL (`Bodega`, `Jefe`, `Empleado`, `Producto`, `ProductosBodega`). Los endpoints que llama todavía no están implementados en el backend.
 
 ## Ejecutar
 
@@ -17,16 +17,37 @@ Para comprobar la compilación de producción:
 npm run build
 ```
 
+## API
+
+La base URL se configura con `VITE_API_BASE_URL`. Por defecto usa `http://localhost:8000`.
+
+Endpoints que consume el frontend:
+
+| Método | Ruta | Uso |
+|---|---|---|
+| `POST` | `/auth/signup` | Crear jefe y bodega |
+| `POST` | `/auth/login` | Iniciar sesión de jefe o empleado |
+| `GET` | `/auth/me` | Restaurar la sesión al recargar |
+| `POST` | `/auth/change-password` | Cambiar contraseña del empleado |
+| `GET` | `/profiles` | Jefe y empleados, para etiquetas de autor y lista de cuentas |
+| `POST` | `/profiles/employees` | Crear empleado |
+| `POST` | `/profiles/employees/{id}/revoke` | Revocar acceso |
+| `GET` | `/products` | Productos de la bodega del usuario |
+| `POST` | `/products` | Registrar producto en el catálogo y en la bodega |
+| `PATCH` | `/products/{id}` | Editar datos, stock, precio, vencimiento, bloqueo y estado |
+
+El contrato de payloads y respuestas está documentado en `src/lib/api.js`.
+
 ## Cómo funciona
 
 - **Acceso:** registro de jefe con nombres y apellidos separados, e inicio de sesión con correo y contraseña. El jefe crea cuentas de empleado con una contraseña inicial generada, puede revocar el acceso y permite al empleado cambiar su contraseña. Revocar conserva el historial y bloquea las filas del empleado.
 - **Roles:** el jefe edita cualquier fila, incluidas las bloqueadas, y puede bloquear, desactivar y reactivar productos sin borrarlos. El empleado edita solo filas activas, desbloqueadas y creadas por él, incluido precio y stock, y accede únicamente a su bodega asignada.
-- **Inventario:** alta de productos con icono emoji, búsqueda, ID por fila, autor de cada registro y edición en línea. Toda edición directa de stock deja un movimiento de ajuste con responsable y valores anterior y nuevo.
-- **Alertas y sugerencias:** vencimientos calculados desde las fechas ingresadas y propuestas demostrativas de descuento y reposición que la persona puede revisar, ajustar o descartar. La IA solo apoya la decisión; nunca aprueba por sí sola ni modifica el inventario.
+- **Inventario:** alta de productos con icono emoji, búsqueda, ID por fila, autor de cada registro y edición en línea. Los cambios se envían al backend; el historial de movimientos queda fuera de este corte.
+- **Alertas:** vencimientos calculados desde las fechas ingresadas. Las sugerencias de IA quedan fuera de este corte.
 - **Registro de mercadería:** flujos demostrativos de foto, voz, escritura y código de barras. El navegador permite elegir o tomar una foto; voz, escaneo, análisis de imágenes y predicciones de IA no están conectados a servicios reales.
 - **Hallazgos:** pantalla con control de memoria o papel, dificultad para registrar ventas, pérdidas por vencimiento y necesidad de identificar al responsable de cada movimiento.
 
-Las decisiones de roles, propiedad y bloqueo, y la persistencia de perfiles son propuestas aplicadas al prototipo, no requisitos aprobados para producción. Las entrevistas son exploratorias: el prototipo no demuestra reducción de pérdidas ni efectividad de la IA.
+Las decisiones de roles, propiedad y bloqueo son propuestas aplicadas al prototipo; la persistencia ahora apunta a la base PostgreSQL definida en `apps/database`. Los campos `creadoPor`, `bloqueado` y `bloqueadoPor` aún no existen en esa base y deben resolverse en el backend. Las entrevistas son exploratorias: el prototipo no demuestra reducción de pérdidas ni efectividad de la IA.
 
 ## Referencias
 
