@@ -17,6 +17,29 @@ Para comprobar la compilación de producción:
 npm run build
 ```
 
+## Docker para EC2
+
+El `Dockerfile` compila `dist` y lo sirve con nginx en el puerto 80. La URL de la API se hornea en el build, así que hay que pasarla como build arg:
+
+```powershell
+docker build -f .\apps\operations-web\Dockerfile -t theandrewkc/bodesmart-operations-web:latest `
+  --build-arg VITE_API_BASE_URL="https://api.bodesmart.online" .\apps\operations-web
+```
+
+El contenedor se levanta en el EC2 con `-p 3002:80`, y el nginx del host hace proxy desde `app.bodesmart.online`.
+
+## Docker local (sin nginx)
+
+`Dockerfile` compila `dist` y lo sirve con nginx: es la imagen para el EC2. `Dockerfile.local` levanta el servidor de desarrollo de Vite directamente, para probar en tu máquina:
+
+```powershell
+cd C:\projects\project-software-design
+docker build -f .\apps\operations-web\Dockerfile.local -t bodesmart-operations-web-local:latest .\apps\operations-web
+docker run -d --name operations-web-local -p 5173:5173 bodesmart-operations-web-local:latest
+```
+
+Abrí `http://localhost:5173`. El backend debe estar corriendo y publicado en `127.0.0.1:8000`: la URL de la API se ejecuta en el navegador, por eso el default local es `http://localhost:8000`. Podés cambiarlo con `-e VITE_API_BASE_URL=...` al hacer `docker run`.
+
 ## API
 
 La base URL se configura con `VITE_API_BASE_URL`. Por defecto usa `http://localhost:8000`.

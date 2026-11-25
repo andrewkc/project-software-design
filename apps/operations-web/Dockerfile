@@ -1,6 +1,10 @@
 # Stage 1: Build React application
 FROM node:22-alpine AS build
 
+# Baked into the built JS at compile time (Vite replaces import.meta.env).
+ARG VITE_API_BASE_URL=http://localhost:8000
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
 WORKDIR /app
 
 COPY package*.json ./

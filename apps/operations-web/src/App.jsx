@@ -259,7 +259,10 @@ function App() {
     }
   }
 
-  if (screen === "auth") return <AuthScreen mode={authMode} busy={authBusy} onModeChange={setAuthMode} onLogin={finishLogin} onSignup={finishSignup} onForgotPassword={() => setToast("La recuperación de contraseña estará disponible pronto.")} />;
+  if (screen === "auth") return <>
+    <AuthScreen mode={authMode} busy={authBusy} onModeChange={setAuthMode} onLogin={finishLogin} onSignup={finishSignup} onForgotPassword={() => setToast("La recuperación de contraseña estará disponible pronto.")} />
+    {toast && <div className="toast-message" role="status"><span><Icon name="check" size={17} /></span>{toast}</div>}
+  </>;
 
   if (loading && !user) return <main className="signup-shell"><div className="toast-message" role="status">Cargando información de la bodega...</div></main>;
 
