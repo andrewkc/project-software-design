@@ -198,7 +198,7 @@ Una tarjeta está terminada solo si:
 
 - cumple sus criterios de aceptación y conserva los identificadores CU/RF/RN/EN/AN/TN aplicables;
 - tiene pruebas proporcionales al riesgo, especialmente para permisos y stock;
-- no introduce proveedores, pagos, facturación, delivery, contabilidad, voz/fotografía operativa ni vida útil por IA;
+- no introduce proveedores, pagos, facturación, delivery, contabilidad, voz/fotografía operativa ni vida útil por IA; el registro **asistido y revisable** de ADR-005 es la excepción acordada, no registro automático;
 - registra errores sin mutar stock parcialmente;
 - actualiza la documentación afectada y enlaza cualquier decisión pendiente;
 - fue revisada por el propietario de la superficie dependiente;

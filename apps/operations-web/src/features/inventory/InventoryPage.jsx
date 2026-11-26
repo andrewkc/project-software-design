@@ -44,7 +44,7 @@ function matchesFilter(value, filter) {
 
 const emptyFilters = Object.fromEntries(columns.map(([key]) => [key, { operator: key === "stock" || key === "price" ? "greater" : "contains", value: "" }]));
 
-export function InventoryPage({ products, expiringProducts, query, onQueryChange, user, employees, jefeProfile, onUpdateProduct, onSetProductActive, onToggleLock }) {
+export function InventoryPage({ products, categories = [], expiringProducts, query, onQueryChange, user, employees, jefeProfile, onUpdateProduct, onSetProductActive, onToggleLock }) {
   const [showCatalog, setShowCatalog] = useState(false);
   const [sort, setSort] = useState({ key: "name", direction: "asc" });
   const [filters, setFilters] = useState(emptyFilters);
@@ -54,7 +54,11 @@ export function InventoryPage({ products, expiringProducts, query, onQueryChange
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({});
   const expiringIds = useMemo(() => new Set(expiringProducts.map((product) => product.id)), [expiringProducts]);
-  const categoryOptions = useMemo(() => Array.from(new Set([...baseCategories, ...products.map((product) => product.category).filter(Boolean)])), [products]);
+  const categoryOptions = useMemo(() => Array.from(new Set([
+    ...baseCategories,
+    ...categories,
+    ...products.map((product) => product.category).filter(Boolean),
+  ])), [categories, products]);
   const jefe = isJefe(user);
   const copy = workspaceCopy(user);
   const userId = currentUserId(user);

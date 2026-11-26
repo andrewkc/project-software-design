@@ -15,7 +15,7 @@ El usuario precisó que ese “administrador” es personal interno de BodeSmart
 
 ## Decisión
 
-1. El jefe crea, retira y bloquea el acceso de los empleados de **su** bodega. El administrador de plataforma queda fuera de este flujo en el MVP.
+1. El jefe crea, retira y bloquea el acceso de los empleados de **su** bodega. El administrador de plataforma queda fuera de este flujo en el MVP de `operations-web`. **Nota:** ADR-008 amplía el alcance para `admin-web` y permite al administrador gestionar todos los roles; el jefe conserva este flujo en la app de operaciones.
 2. EN-03 incorpora `creadoPor` (EN-01), `bloqueado` y `bloqueadoPor`. Las filas de muestra iniciales se consideran creadas por el jefe.
 3. Regla de edición:
    - Jefe: edita **todas** las filas, incluidas las bloqueadas; puede bloquear/desbloquear y desactivar/reactivar.

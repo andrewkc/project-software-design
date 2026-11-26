@@ -39,6 +39,8 @@ export const navigation = [
   { id: "inventory", label: "Inventario", icon: "box" },
   { id: "register", label: "Registrar", icon: "plus" },
   { id: "alerts", label: "Vencimientos", icon: "calendar" },
+  { id: "sales", label: "Ventas", icon: "trending" },
+  { id: "recommendations", label: "Recomendaciones", icon: "sparkles", jefeOnly: true },
   { id: "employees", label: "Empleados", icon: "shield", jefeOnly: true },
 ];
 
@@ -47,6 +49,8 @@ export const mobileNavigation = [
   { id: "inventory", label: "Inventario", icon: "box" },
   { id: "register", label: "Registrar", icon: "plus" },
   { id: "alerts", label: "Vencimientos", icon: "calendar" },
+  { id: "sales", label: "Ventas", icon: "trending" },
+  { id: "recommendations", label: "Recomendaciones", icon: "sparkles", jefeOnly: true },
   { id: "employees", label: "Empleados", icon: "shield", jefeOnly: true },
   { id: "profile", label: "Perfil", icon: "users", empleadoOnly: true },
 ];

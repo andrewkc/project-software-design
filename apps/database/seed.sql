@@ -7,11 +7,29 @@
 --
 -- No manager credentials are stored here. The account is created through
 -- /auth/signup, which hashes the password with bcrypt before storing it.
+-- The only exception is the demo platform admin below: its readable password
+-- is rehashed by ensure_schema() on the first backend startup. It is a local
+-- prototype credential, not a real account.
+--
+-- Demo purchases are not inserted here: the backend seeds them once through
+-- ensure_demo_sales() after ensure_schema(), so an existing database also gets
+-- the same synthetic purchases without decrementing stock twice.
 
 BEGIN;
 
 INSERT INTO Bodega (id, nombre, direccion)
 VALUES (1, 'Bodega San Martín', '')
+ON CONFLICT DO NOTHING;
+
+-- Demo platform administrator for admin-web. bcrypt hashing happens at startup.
+INSERT INTO Admin (id, nombres, apellidos, correo, password, estado)
+VALUES (1, 'Admin', 'Plataforma', 'admin@bodesmart.local', 'Admin123456', 'activo')
+ON CONFLICT DO NOTHING;
+
+-- Initial category catalog. New categories are added from the register form.
+INSERT INTO Categoria (nombre) VALUES
+('Abarrotes'), ('Lácteos'), ('Frutas'), ('Bebidas'), ('Limpieza'),
+('Snacks'), ('Conservas'), ('Cuidado personal'), ('Otros')
 ON CONFLICT DO NOTHING;
 
 -- Catalog: products without stock or warehouse assignment.
@@ -78,6 +96,7 @@ ON CONFLICT DO NOTHING;
 
 -- Reset SERIAL sequences after inserting explicit IDs.
 SELECT setval(pg_get_serial_sequence('Bodega', 'id'), COALESCE((SELECT MAX(id) FROM Bodega), 1));
+SELECT setval(pg_get_serial_sequence('Admin', 'id'), COALESCE((SELECT MAX(id) FROM Admin), 1));
 SELECT setval(pg_get_serial_sequence('Jefe', 'id'), COALESCE((SELECT MAX(id) FROM Jefe), 1));
 SELECT setval(pg_get_serial_sequence('Producto', 'id'), COALESCE((SELECT MAX(id) FROM Producto), 1));
 

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import CORS_ORIGINS
 from database import ensure_schema
-from routers import auth, profiles, products
+from routers import admin, auth, categories, customer, profiles, products, recommendations, registration, sales
 
 app = FastAPI(title="BodeSmart API")
 app.add_middleware(
@@ -30,5 +30,11 @@ def health():
 
 
 app.include_router(auth.router)
+app.include_router(admin.router)
+app.include_router(categories.router)
+app.include_router(customer.router)
 app.include_router(profiles.router)
 app.include_router(products.router)
+app.include_router(recommendations.router)
+app.include_router(registration.router)
+app.include_router(sales.router)

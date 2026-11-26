@@ -15,7 +15,9 @@ Do not commit real credentials. The defaults are the prototype seed values.
 """
 
 import os
+import sys
 import uuid
+from pathlib import Path
 
 import httpx
 import pytest
@@ -28,7 +30,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 @pytest.fixture(scope="session")
 def client():
-    with httpx.Client(base_url=API_BASE, timeout=15) as http:
+    with httpx.Client(base_url=API_BASE, timeout=30) as http:
         try:
             http.get("/health")
         except httpx.ConnectError:
@@ -45,7 +47,7 @@ def jefe_headers(client):
 
 @pytest.fixture
 def created():
-    state = {"product_ids": [], "employee_emails": [], "jefe_emails": [], "bodegas": []}
+    state = {"product_ids": [], "employee_emails": [], "jefe_emails": [], "bodegas": [], "categories": []}
     yield state
     if not DATABASE_URL:
         return
@@ -61,6 +63,8 @@ def created():
             conn.execute("DELETE FROM Jefe WHERE lower(correo) = lower(%s)", (email,))
         for name in state["bodegas"]:
             conn.execute("DELETE FROM Bodega WHERE nombre = %s", (name,))
+        for name in state["categories"]:
+            conn.execute("DELETE FROM Categoria WHERE nombre = %s", (name,))
 
 
 def test_health(client):
@@ -95,10 +99,60 @@ def test_products_list(client, jefe_headers):
     assert required.issubset(products[0])
 
 
+def test_categories_can_grow_and_are_reused(client, jefe_headers, created):
+    suffix = uuid.uuid4().hex[:8]
+    name = f"Categoría test {suffix}"
+    created["categories"].append(name)
+
+    response = client.post("/categories", headers=jefe_headers, json={"nombre": f"  {name}  "})
+    assert response.status_code == 200, response.text
+    assert response.json()["nombre"] == name
+
+    listed = client.get("/categories", headers=jefe_headers)
+    assert listed.status_code == 200
+    assert name in listed.json()
+
+    repeated = client.post("/categories", headers=jefe_headers, json={"nombre": name.lower()})
+    assert repeated.status_code == 200
+    assert repeated.json()["nombre"] == name
+
+    product = client.post("/products", headers=jefe_headers, json={
+        "nombre": f"Producto categoría {suffix}",
+        "categoria": name,
+        "stock": 2,
+    })
+    assert product.status_code == 200, product.text
+    created["product_ids"].append(product.json()["id"])
+    assert product.json()["categoria"] == name
+
+
 def test_profiles_list_as_jefe(client, jefe_headers):
     response = client.get("/profiles", headers=jefe_headers)
     assert response.status_code == 200
     assert any(profile["rol"] == "jefe" for profile in response.json())
+
+
+def test_ai_models_are_allowlisted_and_key_free(client, jefe_headers):
+    response = client.get("/ai/models", headers=jefe_headers)
+    assert response.status_code == 200, response.text
+    data = response.json()
+
+    assert data["default"]
+    assert any(model["activo"] and model["id"] == data["default"] for model in data["modelos"])
+    assert all(set(model) == {"id", "label", "activo"} for model in data["modelos"])
+    assert "clave" not in data
+    assert "key" not in data
+
+
+def test_extract_rejects_model_outside_allowlist(client, jefe_headers):
+    response = client.post("/products/extract", headers=jefe_headers, json={
+        "modo": "photo",
+        "data": "aW1hZ2VuLXNpbnRldGljYQ==",
+        "mime_type": "image/jpeg",
+        "modelo": "gemini-fuera-de-lista",
+    })
+    assert response.status_code == 400, response.text
+    assert "no permitido" in response.json()["detail"]
 
 
 def test_signup(client, created):
@@ -189,6 +243,13 @@ def test_employee_permissions_and_revoke(client, jefe_headers, created):
     denied = client.patch(f"/products/{product_id}", headers=employee_headers, json={"stock": 4})
     assert denied.status_code == 403
 
+    invalid_extract = client.post("/products/extract", headers=employee_headers, json={
+        "modo": "photo",
+        "data": "data:application/pdf;base64,Zg==",
+        "mime_type": "application/pdf",
+    })
+    assert invalid_extract.status_code == 400, invalid_extract.text
+
     changed = client.post("/auth/change-password", headers=employee_headers, json={
         "password_actual": password,
         "password_nueva": new_password,
@@ -200,3 +261,134 @@ def test_employee_permissions_and_revoke(client, jefe_headers, created):
     assert revoked.status_code == 200, revoked.text
     assert revoked.json()["activo"] is False
     assert client.post("/auth/login", json={"correo": email, "password": new_password}).status_code == 403
+
+
+def test_recommendations_are_jefe_only(client, jefe_headers, created):
+    suffix = uuid.uuid4().hex[:8]
+    email = f"empleado.ia.{suffix}@example.com"
+    password = "ClaveEmpleado123"
+    response = client.post("/profiles/employees", headers=jefe_headers, json={
+        "nombres": "Empleado",
+        "apellidos": "IA",
+        "correo": email,
+        "password": password,
+    })
+    assert response.status_code == 200, response.text
+    created["employee_emails"].append(email)
+
+    login = client.post("/auth/login", json={"correo": email, "password": password})
+    assert login.status_code == 200, login.text
+    employee_headers = {"Authorization": f"Bearer {login.json()['token']}"}
+
+    denied = client.post("/recommendations/generate", headers=employee_headers)
+    assert denied.status_code == 403
+    assert "jefe" in denied.json()["detail"]
+
+
+def test_recommendations_do_not_mutate_products(client, jefe_headers):
+    before = client.get("/products", headers=jefe_headers).json()
+    response = client.post("/recommendations/generate", headers=jefe_headers)
+    after = client.get("/products", headers=jefe_headers).json()
+
+    assert after == before, "Generar recomendaciones no debe cambiar precios ni stock"
+
+
+def test_sales_history_contains_only_paid_purchases(client, jefe_headers):
+    response = client.get("/sales", headers=jefe_headers)
+    assert response.status_code == 200, response.text
+    rows = response.json()
+    assert rows, "El backend debe sembrar las tres compras demo pagadas"
+    for row in rows:
+        assert row["estado"] == "pagado"
+        assert row["cliente"]
+        assert row["fechaPago"]
+        assert row["lineas"]
+        for line in row["lineas"]:
+            assert line["cantidad"] > 0
+            assert float(line["precioUnitario"]) > 0
+
+
+def test_sales_reject_unauthenticated_and_client_role(client):
+    assert client.get("/sales").status_code == 401
+    backend = str(Path(__file__).resolve().parents[1] / "apps" / "backend")
+    if backend not in sys.path:
+        sys.path.insert(0, backend)
+    from security import create_token  # noqa: E402
+
+    buyer_headers = {"Authorization": f"Bearer {create_token(1, 'cliente')}"}
+    assert client.get("/sales", headers=buyer_headers).status_code == 403
+    assert client.post("/sales", headers=buyer_headers, json={}).status_code == 403
+
+
+def test_employee_can_read_sales(client, jefe_headers, created):
+    suffix = uuid.uuid4().hex[:8]
+    email = f"empleado.ventas.{suffix}@example.com"
+    password = "ClaveEmpleado123"
+    created["employee_emails"].append(email)
+    response = client.post("/profiles/employees", headers=jefe_headers, json={
+        "nombres": "Empleado",
+        "apellidos": "Ventas",
+        "correo": email,
+        "password": password,
+    })
+    assert response.status_code == 200, response.text
+    login = client.post("/auth/login", json={"correo": email, "password": password})
+    assert login.status_code == 200, login.text
+    headers = {"Authorization": f"Bearer {login.json()['token']}"}
+    listed = client.get("/sales", headers=headers)
+    assert listed.status_code == 200, listed.text
+    assert isinstance(listed.json(), list)
+
+
+def test_sale_over_available_stock_is_rejected_without_mutating(client, jefe_headers):
+    before = client.get("/products", headers=jefe_headers).json()
+    sales = client.get("/sales", headers=jefe_headers).json()
+    client_id = sales[0]["clienteId"]
+    # Arroz extra: activo, vencimiento futuro y stock sembrado suficiente para
+    # que el único motivo del rechazo sea la cantidad.
+    product_id = 4
+    assert any(item["id"] == product_id for item in before)
+    response = client.post("/sales", headers=jefe_headers, json={
+        "id_cliente": client_id,
+        "lineas": [{"id_producto": product_id, "cantidad": 1_000_000}],
+    })
+    assert response.status_code == 409, response.text
+    after = client.get("/products", headers=jefe_headers).json()
+    assert after == before, "Una venta rechazada no debe descontar stock ni crear la compra"
+    if response.status_code == 503 and "no está configurada" in response.text:
+        pytest.skip("GEMINI_API_KEY no configurada; el inventario sigue disponible")
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert set(body) == {"generadas_en", "modelo", "recomendaciones", "aviso"}
+    assert "no genera" in body["aviso"]
+    assert "no modifica inventario" in body["aviso"]
+
+    known = {product["id"]: product for product in before}
+    for item in body["recomendaciones"]:
+        assert item["id_producto"] in known
+        assert item["icono"]
+        assert item["tipo"] in {"descuento", "aumento", "reposicion"}
+        assert item["justificacion"]
+        if item["tipo"] == "reposicion":
+            assert item["cantidad_sugerida"] > 0
+        else:
+            current = known[item["id_producto"]]["precio_venta"]
+            assert item["precio_sugerido"] > 0
+            if item["tipo"] == "descuento":
+                assert item["precio_sugerido"] < current
+            else:
+                assert item["precio_sugerido"] > current
+
+
+def test_registered_extraction_rejects_invalid_media_without_mutating(client, jefe_headers):
+    before = client.get("/products", headers=jefe_headers).json()
+    response = client.post("/products/extract", headers=jefe_headers, json={
+        "modo": "photo",
+        "data": "data:application/pdf;base64,Zg==",
+        "mime_type": "application/pdf",
+    })
+    after = client.get("/products", headers=jefe_headers).json()
+
+    assert response.status_code == 400, response.text
+    assert after == before, "La extracción inválida no debe crear ni modificar productos"

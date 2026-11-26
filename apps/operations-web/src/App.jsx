@@ -9,8 +9,11 @@ import { AlertsPage } from "./features/alerts/AlertsPage";
 import { InsightsPage } from "./features/insights/InsightsPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { ProductModal } from "./features/products/ProductModal";
+import { useProductDraft } from "./features/products/useProductDraft";
 import { RegisterPage } from "./features/register/RegisterPage";
 import { EmployeesPage } from "./features/employees/EmployeesPage";
+import { RecommendationsPage } from "./features/recommendations/RecommendationsPage";
+import { SalesPage } from "./features/sales/SalesPage";
 import { Icon } from "./components/Icon";
 import { workspaceCopy } from "./lib/workspaceCopy";
 import { api, clearToken, getToken, setToken, toProduct, toProfile, toUser } from "./lib/api";
@@ -19,8 +22,11 @@ function App() {
   const [screen, setScreen] = useState(() => (getToken() ? "app" : "auth"));
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [jefeProfile, setJefeProfile] = useState(null);
+  const [sales, setSales] = useState([]);
+  const [aiModels, setAiModels] = useState([]);
   const [loading, setLoading] = useState(() => Boolean(getToken()));
   const [authMode, setAuthMode] = useState("login");
   const [authBusy, setAuthBusy] = useState(false);
@@ -28,9 +34,8 @@ function App() {
   const [method, setMethod] = useState(null);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
-  const [voiceCaptured, setVoiceCaptured] = useState(false);
-  const [photoName, setPhotoName] = useState("");
-  const [barcode, setBarcode] = useState("");
+  const [recommendations, setRecommendations] = useState({ items: [], generatedAt: "", hasGenerated: false });
+  const draft = useProductDraft();
 
   const { expiringProducts, stockTotal, categoryTotals, stockSeries } = useInventorySummary(products);
   const maxCategoryTotal = Math.max(...categoryTotals.map(([, total]) => total), 1);
@@ -42,12 +47,24 @@ function App() {
     }
     let active = true;
     setLoading(true);
-    Promise.all([api.getMe(), api.listProducts()])
-      .then(async ([me, productRows]) => {
+    Promise.all([
+      api.getMe(),
+      api.listProducts(),
+      api.listCategories().catch(() => []),
+      api.listSales().catch(() => []),
+      api.listAiModels().catch(() => ({ modelos: [], default: "" })),
+    ])
+      .then(async ([me, productRows, categoryRows, saleRows, modelRows]) => {
         if (!active) return;
         const current = toUser(me);
         setUser(current);
         setProducts(productRows.map(toProduct));
+        setCategories(categoryRows);
+        setSales(saleRows);
+        const availableModels = Array.isArray(modelRows?.modelos) ? modelRows.modelos : [];
+        setAiModels(availableModels);
+        const defaultModel = modelRows?.default || availableModels[0]?.id || "";
+        draft.setAiModel((current) => current || defaultModel);
         if (current.role === "jefe") {
           const profileRows = await api.listProfiles();
           if (!active) return;
@@ -131,8 +148,11 @@ function App() {
     clearToken();
     setUser(null);
     setProducts([]);
+    setCategories([]);
     setEmployees([]);
     setJefeProfile(null);
+    setRecommendations({ items: [], generatedAt: "", hasGenerated: false });
+    draft.clear();
     setScreen("auth");
     setAuthMode("login");
     setActiveTab("home");
@@ -141,9 +161,7 @@ function App() {
 
   function openMethod(id) {
     setMethod(id);
-    setVoiceCaptured(false);
-    setPhotoName("");
-    setBarcode("");
+    draft.clear();
   }
 
   function productChanges(changes) {
@@ -159,26 +177,38 @@ function App() {
     return payload;
   }
 
-  async function addProduct(event) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const name = String(data.get("productName") || "").trim();
-    const quantity = Number(data.get("quantity"));
-    if (!name || quantity < 1) return;
-    const category = data.get("category");
-    const icon = String(data.get("icon") || "").trim() || (category === "Frutas" ? "🍎" : category === "Lácteos" ? "🥛" : "📦");
+  async function addCategory(nombre) {
+    const created = await api.createCategory({ nombre });
+    const value = typeof created === "string" ? created : created?.nombre;
+    if (!value) throw new Error("No se pudo agregar la categoría.");
+    setCategories((current) => (
+      current.some((item) => item.toLocaleLowerCase("es") === String(value).toLocaleLowerCase("es"))
+        ? current
+        : [...current, value]
+    ));
+    return value;
+  }
+
+  async function addProduct(values) {
+    const name = String(values?.productName || "").trim();
+    const quantity = Number(values?.quantity);
+    if (!name || !Number.isFinite(quantity) || quantity < 1) {
+      setToast("Ingresa un nombre y una cantidad positiva.");
+      return;
+    }
     try {
       const created = await api.createProduct({
-        icono: icon,
+        icono: values.icon || "📦",
         nombre: name,
-        categoria: category,
-        unidad_medida: data.get("unit"),
+        categoria: values.category || "Abarrotes",
+        unidad_medida: values.unit || "unid.",
         stock: quantity,
-        precio_venta: Number(data.get("price")) || 0,
-        fecha_vencimiento: data.get("expires") || null,
+        precio_venta: Number(values.price) || 0,
+        fecha_vencimiento: values.expires || null,
       });
       setProducts((current) => [toProduct(created), ...current]);
       setMethod(null);
+      draft.clear();
       setActiveTab("inventory");
       setToast(`${name} se agregó a ${workspaceCopy(user).addedTarget}.`);
     } catch (error) {
@@ -269,14 +299,16 @@ function App() {
   return <>
     <OperationsLayout user={user} activeTab={activeTab} expiringCount={expiringProducts.length} onNavigate={setActiveTab} onRegister={() => setActiveTab("register")} onLogout={handleLogout}>
       {activeTab === "home" && <HomePage user={user} products={products} expiringProducts={expiringProducts} stockTotal={stockTotal} stockSeries={stockSeries} categoryTotals={categoryTotals} maxCategoryTotal={maxCategoryTotal} onRegister={() => setActiveTab("register")} onNavigate={setActiveTab} />}
-      {activeTab === "inventory" && <InventoryPage products={products} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} user={user} employees={employees} jefeProfile={jefeProfile} onUpdateProduct={updateProduct} onSetProductActive={setProductActive} onToggleLock={toggleProductLock} onRegister={() => openMethod("text")} />}
-      {activeTab === "register" && <RegisterPage products={products} user={user} onSubmit={addProduct} />}
+      {activeTab === "inventory" && <InventoryPage products={products} categories={categories} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} user={user} employees={employees} jefeProfile={jefeProfile} onUpdateProduct={updateProduct} onSetProductActive={setProductActive} onToggleLock={toggleProductLock} onRegister={() => openMethod("text")} />}
+      {activeTab === "register" && <RegisterPage products={products} user={user} onSubmit={addProduct} draft={draft} categories={categories} onCreateCategory={addCategory} aiModels={aiModels} />}
       {activeTab === "alerts" && <AlertsPage expiringProducts={expiringProducts} />}
+      {activeTab === "sales" && <SalesPage sales={sales} />}
       {activeTab === "insights" && <InsightsPage />}
       {activeTab === "employees" && <EmployeesPage employees={employees} onCreateEmployee={createEmployee} onRevokeEmployee={revokeEmployee} />}
+      {activeTab === "recommendations" && <RecommendationsPage user={user} recommendations={recommendations} onRecommendationsChange={setRecommendations} onApplyPrice={patchProduct} onNotify={setToast} />}
       {activeTab === "profile" && <ProfilePage user={user} onLogout={handleLogout} onChangePassword={changeEmployeePassword} />}
     </OperationsLayout>
-    {method && <ProductModal method={productMethods.find((item) => item.id === method)} user={user} onClose={() => setMethod(null)} onSubmit={addProduct} voiceCaptured={voiceCaptured} setVoiceCaptured={setVoiceCaptured} photoName={photoName} setPhotoName={setPhotoName} barcode={barcode} setBarcode={setBarcode} />}
+    {method && <ProductModal method={productMethods.find((item) => item.id === method)} user={user} onClose={() => { setMethod(null); draft.clear(); }} onSubmit={addProduct} draft={draft} categories={categories} onCreateCategory={addCategory} aiModels={aiModels} />}
     {toast && <div className="toast-message" role="status"><span><Icon name="check" size={17} /></span>{toast}</div>}
   </>;
 }

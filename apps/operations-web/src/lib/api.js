@@ -6,6 +6,10 @@
 // - auth endpoints: { token, perfil }
 // - GET /auth/me and GET /profiles: profile objects with { id, rol, nombres, apellidos, correo, bodegaNombre, activo }
 // - GET/POST/PATCH /products: rows joined from Producto and ProductosBodega
+// - GET/POST /sales: paid purchases of the current warehouse (POST is the
+//   transactional contract reserved for the future customer-web)
+// - GET /ai/models: allowlisted Gemini ids exposed by the backend; the key is
+//   never sent to the browser
 //
 // Product payloads use the database column names so the backend can map them directly.
 
@@ -111,7 +115,14 @@ export const api = {
   listProfiles: () => request("/profiles"),
   createEmployee: (payload) => request("/profiles/employees", { method: "POST", body: JSON.stringify(payload) }),
   revokeEmployee: (id) => request(`/profiles/employees/${encodeURIComponent(id)}/revoke`, { method: "POST" }),
+  listAiModels: () => request("/ai/models"),
+  listCategories: () => request("/categories"),
+  createCategory: (payload) => request("/categories", { method: "POST", body: JSON.stringify(payload) }),
   listProducts: () => request("/products"),
   createProduct: (payload) => request("/products", { method: "POST", body: JSON.stringify(payload) }),
+  extractProduct: (payload) => request("/products/extract", { method: "POST", body: JSON.stringify(payload) }),
   updateProduct: (id, payload) => request(`/products/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  generateRecommendations: () => request("/recommendations/generate", { method: "POST" }),
+  listSales: () => request("/sales"),
+  createSale: (payload) => request("/sales", { method: "POST", body: JSON.stringify(payload) }),
 };

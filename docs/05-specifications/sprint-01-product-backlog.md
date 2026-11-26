@@ -108,8 +108,8 @@ Los bloques A, B y C pueden avanzar en paralelo después de S1-T02. Dev B mantie
 
 - Implementación completa de CU-01..CU-09.
 - Integración de proveedores, pagos, facturación electrónica, delivery o contabilidad.
-- Registro operativo por voz/fotografía.
-- Estimación de vida útil mediante IA.
+- Registro operativo por voz/fotografía sin revisión; el registro asistido y revisable quedó aprobado por ADR-005.
+- Estimación de vida útil mediante IA; `Voz` solo transcribe la fecha dictada (RN-13).
 - Selección definitiva de proveedor/modelo de IA.
 - Umbrales cuantitativos de rendimiento, disponibilidad, seguridad o conectividad no aprobados.
 - Migración de datos reales.

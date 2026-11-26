@@ -1,0 +1,18 @@
+# Local development: Vite dev server served directly, without nginx.
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Accept the same compose build arg as the production Dockerfile. The dev
+# server reads the value when it starts, so `docker run -e` also overrides it.
+ARG VITE_API_BASE_URL=http://127.0.0.1:8000
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+COPY package*.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY . .
+
+EXPOSE 5174
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

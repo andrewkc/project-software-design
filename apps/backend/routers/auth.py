@@ -52,6 +52,8 @@ def login(body: dict = Body(...)):
     with psycopg.connect(DSN, row_factory=dict_row) as conn:
         jefe = conn.execute("SELECT * FROM Jefe WHERE lower(correo) = lower(%s)", (correo,)).fetchone()
         if jefe:
+            if (jefe.get("estado") or "activo") != "activo":
+                fail(403, "Esa cuenta está desactivada")
             if not verify_password(password, jefe["password"]):
                 fail(401, "Correo o contraseña incorrectos")
             who = {"id": jefe["id"], "rol": "jefe"}

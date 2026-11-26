@@ -3,7 +3,7 @@ from fastapi import APIRouter, Body, Depends
 from psycopg.rows import dict_row
 
 from config import DSN
-from database import bodega_id_for, fetch_product, normalize_date, product_response
+from database import bodega_id_for, ensure_category, fetch_product, normalize_date, product_response
 from security import fail, identity_from_header, require
 
 router = APIRouter()
@@ -37,10 +37,16 @@ def create_product(body: dict = Body(...), who: dict = Depends(identity_from_hea
         bodega_id = bodega_id_for(conn, who)
         if bodega_id is None:
             fail(401, "La cuenta ya no tiene acceso")
+        categoria = ensure_category(conn, body.get("categoria")) or None
         producto = conn.execute(
             """INSERT INTO Producto (icono, nombre, categoria, unidad_medida)
                VALUES (%s, %s, %s, %s) RETURNING id""",
-            (body.get("icono") or "📦", body["nombre"], body.get("categoria"), body.get("unidad_medida")),
+            (
+                body.get("icono") or "📦",
+                body["nombre"],
+                categoria,
+                body.get("unidad_medida"),
+            ),
         ).fetchone()
         conn.execute(
             """INSERT INTO ProductosBodega
@@ -82,6 +88,8 @@ def update_product(product_id: int, body: dict = Body(...), who: dict = Depends(
             changes["bloqueado_por"] = who["id"] if changes["bloqueado"] else None
 
         catalog = {key: changes[key] for key in ("nombre", "categoria", "unidad_medida") if key in changes}
+        if "categoria" in catalog:
+            catalog["categoria"] = ensure_category(conn, catalog["categoria"]) or None
         inventory = {key: changes[key] for key in ("stock", "precio_venta", "fecha_vencimiento", "estado", "bloqueado", "bloqueado_por") if key in changes}
         if "fecha_vencimiento" in inventory:
             inventory["fecha_vencimiento"] = normalize_date(inventory["fecha_vencimiento"])

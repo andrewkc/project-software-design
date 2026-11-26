@@ -6,7 +6,7 @@ import time
 from typing import Optional
 
 import bcrypt
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header, HTTPException
 
 from config import SECRET, TOKEN_HOURS
 
@@ -61,3 +61,10 @@ def identity_from_header(authorization: Optional[str] = Header(default=None)) ->
         return {"id": payload["sub"], "rol": payload["rol"]}
     except (ValueError, KeyError, TypeError):
         fail(401, "Token inválido")
+
+
+def require_admin(who: dict = Depends(identity_from_header)) -> dict:
+    """Platform-admin guard isolated from the jefe/empleado routes."""
+    if who.get("rol") != "admin":
+        fail(403, "Solo el administrador de plataforma puede realizar esta acción")
+    return who

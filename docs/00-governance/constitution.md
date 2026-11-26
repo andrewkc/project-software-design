@@ -23,3 +23,7 @@ Tres roles; jefe hereda capacidades del empleado; empleado limitado a su bodega;
 
 ## Fuera del MVP
 Proveedores, pasarelas de pago, facturación electrónica, entregas, contabilidad, registro automático por voz/fotografía y estimación de vida útil por IA.
+
+**Nota de alcance — ADR-005 (aprobado por el usuario el 2026-11-26):** se exceptúa de esta exclusión el **registro asistido** por foto, código de barras y voz, siempre que la IA solo proponga campos revisables y el usuario confirme el guardado. No se autoriza registro automático sin revisión ni estimación de vida útil por IA.
+
+**Nota de alcance — ADR-007 (aprobado por el usuario el 2026-11-26):** se exceptúa también la **tienda del comprador** y el pago de **prueba** (`LOCAL_SIMULATION` y Mercado Pago en modo test). No se autoriza cobro real ni pasarela de producción.
