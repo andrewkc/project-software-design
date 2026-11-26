@@ -11,6 +11,7 @@ Backend mínimo con FastAPI, organizado en módulos pequeños. La lógica y los 
 | `routers/auth.py` | Signup, login, perfil y cambio de contraseña |
 | `routers/profiles.py` | Listado, alta y revocación de cuentas |
 | `routers/products.py` | Listado, alta y edición de productos |
+| `routers/customer.py` | Catálogo público, cuenta de comprador, reserva, pedido y pago de prueba |
 
 ## Arrancar
 
@@ -67,6 +68,27 @@ El esquema base viene de `../database/database.sql`. Al arrancar, `database.py` 
 | `GET` | `/products` | Productos de la bodega del usuario |
 | `POST` | `/products` | Crear producto en catálogo y bodega |
 | `PATCH` | `/products/{id}` | Editar producto, bloquear, desactivar o reactivar |
+
+## Tienda del comprador
+
+`customer-web` utiliza las rutas `/customer/stores`, `/customer/offers`,
+`/customer/auth/*` y `/customer/orders/*`. Los pedidos reservan stock diez
+minutos; el importe y las líneas quedan congelados. La simulación local se
+habilita con `ALLOW_SIMULATED_PAYMENT=true` (valor local por defecto).
+`MERCADOPAGO_ACCESS_TOKEN` activa Checkout Pro de prueba; la comprobación de
+aprobación se hace desde el servidor y verifica referencia, importe, moneda,
+aplicación y cuenta del proveedor antes de descontar stock. La aplicación
+cliente consulta el resultado después del pago. Si se configura
+`MERCADOPAGO_WEBHOOK_SECRET`, la ruta `/customer/payments/webhook` acepta
+notificaciones firmadas de prueba y consulta la orden al proveedor antes de
+aplicar el cambio. En local la URL no es pública, por lo que la consulta desde
+la aplicación sigue siendo necesaria.
+
+El esquema existente se amplía al iniciar para aceptar datos anteriores. Para
+una base nueva se usan `apps/database/database.sql` y `seed.sql`; el script
+`seed_customer_demo.py` añade tres bodegas, ofertas y cuentas locales cuando
+`BODESMART_DEMO_SEED=1`. La compra todavía usa el saldo agregado de
+`ProductosBodega`; varios lotes por producto son una integración pendiente.
 
 ## Notas
 

@@ -22,3 +22,6 @@ apps/key-instance-01.pem
 # Local environment files (secrets)
 .env
 !.env.example
+.demo-credentials.json
+.local-db/
+.local-runs/

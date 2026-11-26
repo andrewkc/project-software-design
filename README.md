@@ -31,7 +31,7 @@ La IA apoya la decisión. Nunca aprueba promociones, genera compras ni modifica 
 
 **Administrador interno.** Perfil previsto para la app de administración. Gestiona altas, cambios y bajas de cuentas de jefes, empleados y clientes. Esta app está planificada y aún no está implementada.
 
-**Comprador.** Destinatario de la tienda pública prevista. Queda fuera del MVP documentado.
+**Comprador.** Consulta ofertas de varias bodegas, crea una cesta de una tienda, realiza una compra de prueba y revisa sus pedidos. Este alcance se aprobó después del primer MVP documentado.
 
 ## Las aplicaciones previstas
 
@@ -39,15 +39,15 @@ La IA apoya la decisión. Nunca aprueba promociones, genera compras ni modifica 
 | --- | --- | --- |
 | operations-web | app.bodesmart.com | Prototipo actual para jefe y empleado |
 | admin-web | admin.bodesmart.com | Planificada, sin implementar |
-| customer-web | bodesmart.com | Planificada, fuera del MVP |
-| backend | No expuesto públicamente | Primer corte en curso: auth, perfiles, productos y movimientos |
-| database | No expuesto públicamente | Planificada, sin implementar |
+| customer-web | bodesmart.com | Tienda pública implementada en local; pendiente integrarla al despliegue |
+| backend | No expuesto públicamente | Acceso, perfiles, productos y compra del cliente en local |
+| database | No expuesto públicamente | Esquema y datos iniciales disponibles |
 
-El prototipo de operations-web ya cubre el registro de productos, el inventario con ID por fila, el bloqueo y la desactivación, la creación de empleados con contraseña generada y la persistencia de perfiles en SQLite dentro del navegador. Las reglas de roles, propiedad y bloqueo, y la persistencia en SQLite están registradas como decisiones propuestas y aplicadas al prototipo. No son requisitos aprobados para producción.
+`operations-web` cubre registro y edición de productos, bloqueo, desactivación y cuentas de empleados mediante la API. `customer-web` comparte marca y colores, y usa las existencias de la misma base. La compra reserva existencias y las descuenta una sola vez tras confirmar el pago. La integración de inventario por varios lotes sigue pendiente en `main`.
 
 ## Despliegue con Docker Compose
 
-`docker-compose.yml` levanta los tres servicios que hoy se gestionan a mano: `database`, `backend` y `operations-web`. El dominio `app.bodesmart.online` corresponde a **operations-web**; `customer-web` sigue fuera del MVP documentado.
+`docker-compose.yml` levanta `database`, `backend`, `operations-web` y `customer-web`. El dominio `app.bodesmart.online` corresponde a **operations-web**. En desarrollo local con Vite, la tienda del comprador usa el puerto 5174; con Compose usa el 3003. Su publicación en el dominio queda pendiente.
 
 El compose define `build` e `image` para cada servicio: sirve para construir en local y para bajar las imágenes ya publicadas en el EC2. Las diferencias entre ambos entornos van en `.env` (ignorado por Git). Copiar `.env.example` a `.env` y completar los valores reales.
 
@@ -67,7 +67,7 @@ docker compose down -v
 docker compose up -d --build
 ```
 
-Queda en `http://127.0.0.1:5173` y la API en `http://127.0.0.1:8000/health`.
+La bodega queda en `http://127.0.0.1:5173`, la tienda del comprador en `http://127.0.0.1:3003` y la API en `http://127.0.0.1:8000/health`.
 
 ### Publicar imágenes
 
@@ -100,7 +100,7 @@ Para ver logs: `docker compose logs -f backend`. Para el estado: `docker compose
 
 ## Lo que queda fuera del MVP
 
-No se incluyen proveedores, pagos, facturación electrónica, entregas, contabilidad, estimación de vida útil por IA ni vista de compradores. El prototipo muestra pantallas de ejemplo para registro por foto, código, texto y voz, pero esas modalidades no forman parte del MVP documentado.
+No se incluyen proveedores, pagos con dinero real, facturación electrónica, entregas ni contabilidad. La compra del cliente solo usa simulación local o credenciales de prueba de Mercado Pago. El prototipo muestra pantallas de ejemplo para registro por foto, código, texto y voz; el análisis de imagen aún no está conectado.
 
 ## Cómo se construye la documentación
 

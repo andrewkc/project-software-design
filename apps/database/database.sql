@@ -75,6 +75,8 @@ CREATE TABLE Cliente (
 CREATE TABLE Oferta (
     id SERIAL PRIMARY KEY,
     id_producto INT NOT NULL REFERENCES Producto(id),
+    id_bodega INT REFERENCES Bodega(id),
+    precio_original DECIMAL(10,2),
     precio_oferta DECIMAL(10,2) NOT NULL,
     fecha_inicio TIMESTAMP NOT NULL,
     fecha_fin TIMESTAMP NOT NULL,
@@ -102,13 +104,18 @@ CREATE TABLE Compra (
     total DECIMAL(10,2) NOT NULL,
     estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
     fecha_compra TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    fecha_recojo TIMESTAMP
+    fecha_recojo TIMESTAMP,
+    reserva_hasta TIMESTAMPTZ,
+    idempotency_key UUID UNIQUE,
+    request_hash VARCHAR(64),
+    fecha_pago TIMESTAMPTZ
 );
 
 CREATE TABLE DetalleCompra (
     id SERIAL PRIMARY KEY,
     id_compra INT NOT NULL REFERENCES Compra(id),
     id_producto INT NOT NULL REFERENCES Producto(id),
+    id_oferta INT REFERENCES Oferta(id),
     cantidad INT NOT NULL CHECK (cantidad > 0),
     precio_unitario DECIMAL(10,2) NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL
@@ -121,5 +128,21 @@ CREATE TABLE Pago (
     id_transaccion_externa VARCHAR(150),
     monto DECIMAL(10,2) NOT NULL,
     estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
-    fecha_pago TIMESTAMP
+    fecha_pago TIMESTAMP,
+    clave_proveedor UUID UNIQUE,
+    checkout_url TEXT,
+    proveedor_app_id VARCHAR(120),
+    proveedor_user_id VARCHAR(120)
 );
+
+CREATE TABLE ReservaCompra (
+    id_compra INT NOT NULL REFERENCES Compra(id) ON DELETE CASCADE,
+    id_producto INT NOT NULL,
+    id_bodega INT NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    estado VARCHAR(20) NOT NULL DEFAULT 'activa',
+    PRIMARY KEY (id_compra, id_producto),
+    FOREIGN KEY (id_producto, id_bodega) REFERENCES ProductosBodega(id_producto, id_bodega)
+);
+
+CREATE INDEX ix_reserva_activa ON ReservaCompra (id_producto, id_bodega) WHERE estado = 'activa';

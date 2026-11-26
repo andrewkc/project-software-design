@@ -35,7 +35,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-bodesmart}:${POSTGRES_PASSWORD:?Definir POSTGRES_PASSWORD en .env}@database:5432/${POSTGRES_DB:-bodesmart}
       BODESMART_SECRET: ${BODESMART_SECRET:?Definir BODESMART_SECRET en .env}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://app.bodesmart.online}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://app.bodesmart.online,http://localhost:3003,http://127.0.0.1:3003}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
+      ALLOW_SIMULATED_PAYMENT: ${ALLOW_SIMULATED_PAYMENT:-true}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:
@@ -61,6 +64,22 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:${WEB_PORT:-3002}:${WEB_CONTAINER_PORT:-80}"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bodesmart
+
+  customer-web:
+    container_name: customer-web
+    build:
+      context: ./apps/customer-web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${CUSTOMER_WEB_PORT:-3003}:80"
     depends_on:
       backend:
         condition: service_healthy

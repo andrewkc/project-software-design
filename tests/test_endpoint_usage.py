@@ -14,12 +14,14 @@ ROOT = Path(__file__).resolve().parents[1]
 BACKEND_FILE = ROOT / "apps" / "backend" / "main.py"
 BACKEND_ROUTERS_DIR = ROOT / "apps" / "backend" / "routers"
 FRONTEND_FILE = ROOT / "apps" / "operations-web" / "src" / "lib" / "api.js"
+CUSTOMER_FRONTEND_FILE = ROOT / "apps" / "customer-web" / "src" / "api.js"
 
 # Utility endpoints that are not part of the UI contract.
-ALLOWED_UNUSED = {("GET", "/"), ("GET", "/health")}
+ALLOWED_UNUSED = {("GET", "/"), ("GET", "/health"), ("POST", "/customer/payments/webhook")}
 
 ROUTE_RE = re.compile(r'@(?:app|router)\.(get|post|patch|put|delete)\(\s*["\']([^"\']+)["\']')
 CALL_RE = re.compile(r'request\(\s*["\'`](/[^"\'`]+)["\'`]')
+POST_CALL_RE = re.compile(r'post\(\s*["\'`](/[^"\'`]+)["\'`]')
 METHOD_RE = re.compile(r'method:\s*["\'](GET|POST|PATCH|PUT|DELETE)["\']')
 PLACEHOLDER_RE = re.compile(r"\$\{[^{}]*\}|\{[^{}]*\}")
 
@@ -34,22 +36,27 @@ def backend_routes():
     files = [BACKEND_FILE, *sorted(BACKEND_ROUTERS_DIR.glob("*.py"))]
     for path in files:
         text = path.read_text(encoding="utf-8")
+        prefix = "/customer" if path.name == "customer.py" else ""
         routes.update(
-            (match.group(1).upper(), normalize(match.group(2)))
+            (match.group(1).upper(), normalize(prefix + match.group(2)))
             for match in ROUTE_RE.finditer(text)
         )
     return routes
 
 
 def frontend_calls():
-    text = FRONTEND_FILE.read_text(encoding="utf-8")
     calls = set()
-    for line in text.splitlines():
-        call = CALL_RE.search(line)
-        if not call:
-            continue
-        method = METHOD_RE.search(line)
-        calls.add((method.group(1).upper() if method else "GET", normalize(call.group(1))))
+    for path, prefix in ((FRONTEND_FILE, ""), (CUSTOMER_FRONTEND_FILE, "/customer")):
+        text = path.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            call = CALL_RE.search(line)
+            if call:
+                method = METHOD_RE.search(line)
+                calls.add((method.group(1).upper() if method else "GET", normalize(prefix + call.group(1))))
+            if prefix:
+                post_call = POST_CALL_RE.search(line)
+                if post_call:
+                    calls.add(("POST", normalize(prefix + post_call.group(1))))
     return calls
 
 

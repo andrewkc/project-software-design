@@ -17,6 +17,19 @@ def ensure_schema():
         # Jefe and Empleado have separate SERIAL sequences, so ids can collide.
         # New profiles share this one; the seeded jefe keeps id 1.
         "CREATE SEQUENCE IF NOT EXISTS bodesmart_profile_id START 1000",
+        "ALTER TABLE Oferta ADD COLUMN IF NOT EXISTS id_bodega INT REFERENCES Bodega(id)",
+        "ALTER TABLE Oferta ADD COLUMN IF NOT EXISTS precio_original DECIMAL(10,2)",
+        "ALTER TABLE Compra ADD COLUMN IF NOT EXISTS reserva_hasta TIMESTAMPTZ",
+        "ALTER TABLE Compra ADD COLUMN IF NOT EXISTS idempotency_key UUID UNIQUE",
+        "ALTER TABLE Compra ADD COLUMN IF NOT EXISTS request_hash VARCHAR(64)",
+        "ALTER TABLE Compra ADD COLUMN IF NOT EXISTS fecha_pago TIMESTAMPTZ",
+        "ALTER TABLE DetalleCompra ADD COLUMN IF NOT EXISTS id_oferta INT REFERENCES Oferta(id)",
+        "ALTER TABLE Pago ADD COLUMN IF NOT EXISTS clave_proveedor UUID UNIQUE",
+        "ALTER TABLE Pago ADD COLUMN IF NOT EXISTS checkout_url TEXT",
+        "ALTER TABLE Pago ADD COLUMN IF NOT EXISTS proveedor_app_id VARCHAR(120)",
+        "ALTER TABLE Pago ADD COLUMN IF NOT EXISTS proveedor_user_id VARCHAR(120)",
+        "CREATE TABLE IF NOT EXISTS ReservaCompra (id_compra INT NOT NULL REFERENCES Compra(id) ON DELETE CASCADE, id_producto INT NOT NULL, id_bodega INT NOT NULL, cantidad INT NOT NULL CHECK (cantidad > 0), estado VARCHAR(20) NOT NULL DEFAULT 'activa', PRIMARY KEY (id_compra, id_producto), FOREIGN KEY (id_producto, id_bodega) REFERENCES ProductosBodega(id_producto, id_bodega))",
+        "CREATE INDEX IF NOT EXISTS ix_reserva_activa ON ReservaCompra (id_producto, id_bodega) WHERE estado = 'activa'",
     ]
     with psycopg.connect(DSN, row_factory=dict_row) as conn:
         for statement in statements:
