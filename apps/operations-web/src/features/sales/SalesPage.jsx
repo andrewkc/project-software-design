@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { Icon } from "../../components/Icon";
 import { PageDate } from "../../components/layout/PageDate";
-
-const money = (value) => new Intl.NumberFormat("es-PE", {
-  style: "currency",
-  currency: "PEN",
-}).format(Number(value) || 0);
+import { money } from "../../lib/money";
 
 const formatDate = (value) => {
   if (!value) return "—";

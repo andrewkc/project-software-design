@@ -30,7 +30,7 @@ Eso agrega tiendas, ofertas vigentes y un comprador demo sin sobrescribir jefes,
 ## Flujo de compra
 
 1. `/customer/offers` publica ofertas vigentes; `available` ya descuenta las reservas activas.
-2. La cesta solo admite productos de una bodega y permite elegir entre **Pago local de prueba** y **Mercado Pago de prueba**. `GET /customer/payment-methods` publica ambos (sin exponer credenciales) y marca Mercado Pago como disponible solo cuando el backend tiene `MERCADOPAGO_ACCESS_TOKEN`.
+2. La cesta solo admite productos de una bodega y permite elegir entre **Pago local de prueba** y **Mercado Pago de prueba**. `GET /customer/payment-methods` publica ambos (sin exponer credenciales) y marca Mercado Pago como disponible solo cuando el backend tiene `MERCADOPAGO_ACCESS_TOKEN`. Si acabas de cargar la variable, recrea el backend antes de volver a la cesta; el procedimiento está en [apps/backend/README.md](../backend/README.md#habilitar-mercado-pago-de-prueba).
 3. `POST /customer/orders` crea una reserva de diez minutos con UUID idempotente y guarda el método elegido en `Pago`; **no descuenta stock**. `Simular pago` aprueba `LOCAL_SIMULATION`; con Mercado Pago, `checkout` abre la pasarela de prueba y `verify-payment` consulta al proveedor desde el backend.
 4. Solo la aprobación verificada descuenta stock. Los estados `pendiente`, `expirado`, `rechazado` y `pago_en_revision` se muestran en `Mis pedidos` y nunca descuentan inventario.
 

@@ -51,6 +51,7 @@
 - [x] Filtro por bodega del token antes de leer o escribir.
 - [x] Rollback completo ante cualquier validación fallida.
 - [x] Siembra demo con savepoint por compra para no romper el arranque.
+- [x] Reemplazar la gráfica de unidades por «Ventas acumuladas», calculada solo desde `GET /sales` en el inicio.
 
 ## Validate
 

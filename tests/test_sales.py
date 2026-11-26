@@ -120,6 +120,50 @@ def test_frontend_exposes_sales_contract():
     assert "Actualizar" in page
 
 
+def test_home_sales_chart_uses_only_the_sales_section_data():
+    app = read("apps/operations-web/src/App.jsx")
+    assert 'import { useSalesSummary } from "./hooks/useSalesSummary";' in app
+    assert "const salesSeries = useSalesSummary(sales);" in app
+    assert "salesSeries={salesSeries}" in app
+    assert "stockSeries" not in app
+
+    hook = read("apps/operations-web/src/hooks/useSalesSummary.js")
+    assert "sale.fechaPago" in hook
+    assert "sale.total" in hook
+    assert "cumulative" in hook
+    assert "const MAX_POINTS = 8;" in hook
+    assert "Math.random" not in hook
+    assert "demo" not in hook.lower()
+
+    home = read("apps/operations-web/src/features/home/HomePage.jsx")
+    assert "Unidades por producto" not in home
+    assert "Ventas acumuladas" in home
+    assert "salesSeries" in home
+    assert 'onNavigate("sales")' in home
+    assert "Sin ventas registradas" in home
+    assert "money(point.cumulative)" in home
+    assert "money(total)" in home
+    assert 'import { money } from "../../lib/money";' in home
+
+    sales_page = read("apps/operations-web/src/features/sales/SalesPage.jsx")
+    assert 'import { money } from "../../lib/money";' in sales_page
+
+    inventory_hook = read("apps/operations-web/src/hooks/useInventorySummary.js")
+    assert "stockSeries" not in inventory_hook
+
+
+def test_home_greeting_is_below_date_notifications_and_profile_block():
+    home = read("apps/operations-web/src/features/home/HomePage.jsx")
+    page_date = home.index("<PageDate")
+    greeting = home.index('<section className="welcome-row"')
+    assert page_date < greeting
+    assert "<PageDate" not in home[greeting:]
+
+    css = read("apps/operations-web/src/styles.css")
+    assert ".welcome-row > .page-date" not in css
+    assert ".page-content:not(.inner-page) .welcome-row > .page-date" not in css
+
+
 # ---------------------------------------------------------------------------
 # In-memory transaction double
 # ---------------------------------------------------------------------------

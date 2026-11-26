@@ -66,6 +66,15 @@ En Linux, para alcanzar un contenedor de base de datos en la misma red, reemplaz
 | `OPEN_FOOD_FACTS_API_URL` | `https://world.openfoodfacts.org/api/v2/product` | Consulta pública de códigos para REG-IA `Código`, sin key |
 | `OPEN_FOOD_FACTS_USER_AGENT` | `BodeSmart/0.1 (local-prototype)` | Identificación ante Open Food Facts; configurar contacto en producción |
 
+### Habilitar Mercado Pago de prueba
+
+1. Obtén un Access Token de **prueba** (`TEST-...`) desde el panel de desarrolladores de Mercado Pago. No uses credenciales de producción.
+2. Edita `.env` en la raíz del repositorio, no `.env.example`, y completa `MERCADOPAGO_ACCESS_TOKEN` y `MERCADOPAGO_WEBHOOK_SECRET`. `.env` ya está ignorado por Git; no compartas ni imprimas esos valores.
+3. Recrea el backend para que Docker vuelva a inyectar la variable: `docker compose up -d --build backend`. Si ejecutas el backend con Python, reinicia el proceso para que `load_dotenv()` vuelva a leer `.env`.
+4. Comprueba sin exponer la credencial: `GET /customer/payment-methods` debe devolver `disponible: true` para `MERCADOPAGO_TEST`.
+
+Con la variable vacía, la tarjeta aparece deshabilitada con el mensaje que viste en la cesta. No se habilita con un valor falso: el backend usaría esa credencial contra la API de Mercado Pago.
+
 El esquema base viene de `../database/database.sql`. Al arrancar, `database.py` agrega de forma idempotente las columnas que las reglas de roles y el contrato de compras necesitan:
 
 - `Empleado.estado` y `Jefe.estado` para revocar acceso; un jefe inactivo ya no inicia sesión ni resuelve su bodega.

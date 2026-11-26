@@ -30,7 +30,7 @@ RF-29 y RN-14 cubren el catálogo persistente de categorías implementado como d
 
 | Caso | Requisitos | Reglas | Decisión | Código | Pruebas |
 |---|---|---|---|---|---|
-| CU-05, CU-07 | RF-31, RF-32, RF-33 | RN-02, RN-03, RN-04, RN-05, RN-06, RN-15, RN-16 | ADR-006 | `apps/database/database.sql`; `apps/backend/database.py`; `apps/backend/sales_service.py`; `apps/backend/routers/sales.py`; `apps/backend/main.py`; `apps/operations-web/src/features/sales/SalesPage.jsx`; `App.jsx`; `api.js`; `demoData.js` | `tests/test_sales.py`; `tests/test_backend_api.py`; `tests/test_endpoint_usage.py` |
+| CU-05, CU-07 | RF-31, RF-32, RF-33 | RN-02, RN-03, RN-04, RN-05, RN-06, RN-15, RN-16 | ADR-006 | `apps/database/database.sql`; `apps/backend/database.py`; `apps/backend/sales_service.py`; `apps/backend/routers/sales.py`; `apps/backend/main.py`; `apps/operations-web/src/features/sales/SalesPage.jsx`; `apps/operations-web/src/features/home/HomePage.jsx`; `apps/operations-web/src/hooks/useSalesSummary.js`; `apps/operations-web/src/lib/money.js`; `App.jsx`; `api.js`; `demoData.js` | `tests/test_sales.py`; `tests/test_backend_api.py`; `tests/test_endpoint_usage.py` |
 
 El historial expone solo `Compra.estado = 'pagado'`. `POST /sales` es el contrato transaccional que `customer-web` invoca a través del servicio compartido de descuento; en `operations-web` lo usa el jefe/empleado y la siembra demo con datos sintéticos. No se crean tablas `Movimiento`/`DetalleMovimiento` ni se asigna responsable de movimiento: esa parte del CU-05 sigue pendiente y registrada en preguntas abiertas.
 

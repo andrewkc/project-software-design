@@ -24,6 +24,7 @@
 - Esquema y migraciones idempotentes: columnas de `Oferta`, `Compra`, `DetalleCompra` y `Pago` del contrato revisado, más `ReservaCompra` con índice parcial.
 - Tres compras demo sintéticas sembradas desde el backend con claves de idempotencia fijas y stock descontado una sola vez.
 - Estado vacío explícito cuando no haya compras pagadas.
+- La gráfica lineal del inicio «Ventas acumuladas» se calcula con el mismo `GET /sales` que consume la sección: agrupa `total` por día de `fechaPago`, acumula en orden cronológico y termina en el mismo total del resumen de `Ventas`. No genera fechas ni importes de ejemplo; si no hay compras pagadas, muestra el estado vacío y un enlace a `Ventas`.
 
 ### Excluido
 

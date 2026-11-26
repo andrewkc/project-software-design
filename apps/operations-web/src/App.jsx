@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { OperationsLayout } from "./components/layout/OperationsLayout";
 import { productMethods } from "./data/demoData";
 import { useInventorySummary } from "./hooks/useInventorySummary";
+import { useSalesSummary } from "./hooks/useSalesSummary";
 import { AuthScreen } from "./features/auth/AuthScreen";
 import { HomePage } from "./features/home/HomePage";
 import { InventoryPage } from "./features/inventory/InventoryPage";
@@ -37,7 +38,8 @@ function App() {
   const [recommendations, setRecommendations] = useState({ items: [], generatedAt: "", hasGenerated: false });
   const draft = useProductDraft();
 
-  const { expiringProducts, stockTotal, categoryTotals, stockSeries } = useInventorySummary(products);
+  const { expiringProducts, stockTotal, categoryTotals } = useInventorySummary(products);
+  const salesSeries = useSalesSummary(sales);
   const maxCategoryTotal = Math.max(...categoryTotals.map(([, total]) => total), 1);
 
   // Sales and stock change in another app. Reload them instead of trusting a
@@ -334,7 +336,7 @@ function App() {
 
   return <>
     <OperationsLayout user={user} activeTab={activeTab} expiringCount={expiringProducts.length} onNavigate={setActiveTab} onRegister={() => setActiveTab("register")} onLogout={handleLogout}>
-      {activeTab === "home" && <HomePage user={user} products={products} expiringProducts={expiringProducts} stockTotal={stockTotal} stockSeries={stockSeries} categoryTotals={categoryTotals} maxCategoryTotal={maxCategoryTotal} onRegister={() => setActiveTab("register")} onNavigate={setActiveTab} />}
+      {activeTab === "home" && <HomePage user={user} products={products} expiringProducts={expiringProducts} stockTotal={stockTotal} salesSeries={salesSeries} categoryTotals={categoryTotals} maxCategoryTotal={maxCategoryTotal} onRegister={() => setActiveTab("register")} onNavigate={setActiveTab} />}
       {activeTab === "inventory" && <InventoryPage products={products} categories={categories} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} user={user} employees={employees} jefeProfile={jefeProfile} onUpdateProduct={updateProduct} onSetProductActive={setProductActive} onToggleLock={toggleProductLock} onRefresh={refreshData} onRegister={() => openMethod("text")} />}
       {activeTab === "register" && <RegisterPage products={products} user={user} onSubmit={addProduct} draft={draft} categories={categories} onCreateCategory={addCategory} aiModels={aiModels} />}
       {activeTab === "alerts" && <AlertsPage expiringProducts={expiringProducts} />}

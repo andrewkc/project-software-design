@@ -141,7 +141,6 @@ input::placeholder { color: #a6aca5; }
 .page-date { display: flex; justify-content: flex-end; align-items: center; gap: 14px; min-height: 20px; margin-bottom: 14px; }
 .page-date-actions { display: flex; align-items: center; gap: 8px; }
 .profile-shortcut { display: none; }
-.welcome-row > .page-date { flex: 0 0 auto; margin: 0 0 24px auto; }
 .welcome-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 24px; }
 .date-greeting { margin: 0 0 7px; color: #88a087; font-size: calc(9px * var(--font-scale)); font-weight: 700; letter-spacing: 1.4px; }
 .welcome-row h1 { margin: 0; color: #263029; font: 750 clamp(calc(24px * var(--font-scale)), 3vw, calc(31px * var(--font-scale)))/1.2 "Manrope", sans-serif; letter-spacing: -1.2px; }
@@ -181,6 +180,8 @@ input::placeholder { color: #a6aca5; }
 .line-chart polyline { fill: none; stroke: #4f8a61; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
 .line-chart circle { fill: #fff; stroke: #4f8a61; stroke-width: 3; }
 .chart-labels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; padding: 0 4px; color: #9ba49b; font-size: calc(8px * var(--font-scale)); text-align: center; }
+.sales-chart-caption { margin: 10px 0 0; color: #8b948b; font-size: calc(10px * var(--font-scale)); text-align: center; }
+.sales-chart-caption strong { color: #2c6646; }
 .category-card, .attention-card { min-height: 158px; }
 .category-list, .attention-list { display: grid; gap: 12px; }
 .category-row > div { display: flex; justify-content: space-between; align-items: center; color: #6e796f; font-size: calc(10px * var(--font-scale)); }
@@ -609,9 +610,8 @@ tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
   .today-label { display: inline; color: #8a938a; font-size: calc(9px * var(--font-scale)); text-transform: capitalize; }
   .topbar-actions { gap: 10px; }
   .page-content { padding: 25px 17px 26px; }
+  .page-date { margin-bottom: 10px; }
   .welcome-row { align-items: flex-start; flex-direction: column; gap: 13px; margin-bottom: 19px; }
-  .page-content:not(.inner-page) .welcome-row { flex-direction: row; align-items: flex-start; }
-  .page-content:not(.inner-page) .welcome-row > .page-date { margin-top: 3px; }
   .profile-shortcut { display: grid; color: #397a55; background: #eef5ed; }
   .page-date-actions { gap: 4px; }
   .welcome-row h1 { font-size: calc(25px * var(--font-scale)); }

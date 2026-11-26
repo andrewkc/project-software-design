@@ -28,7 +28,7 @@
 
 ## Validación de ventas (VENTAS-01)
 
-- Estática de contrato: `tests/test_sales.py` revisa el esquema y el servicio (solo `pagado`, `FOR UPDATE`, descuento condicional, idempotencia, savepoint de la demo, filtro por bodega en `GET/POST /sales`, navegación visible para jefe y empleado y `api.js`), además de la recarga de ventas/inventario al enfocar la pestaña y el botón «Actualizar».
+- Estática de contrato: `tests/test_sales.py` revisa el esquema y el servicio (solo `pagado`, `FOR UPDATE`, descuento condicional, idempotencia, savepoint de la demo, filtro por bodega en `GET/POST /sales`, navegación visible para jefe y empleado y `api.js`), además de la recarga de ventas/inventario al enfocar la pestaña y el botón «Actualizar». También comprueba que la gráfica del inicio use solo `fechaPago` y `total` de `/sales`, sin datos sintéticos.
 - Integración HTTP: `tests/test_backend_api.py` agrega permisos `403` para `cliente`, rechazo de cantidades mayores que el stock y verificación de que un pedido no pagado no aparece en `/sales`.
 - Coherencia: cada venta se guarda con `Compra.estado = 'pagado'`, detalle con precios congelados, `ReservaCompra` consumida y traza `Pago` local; el stock baja en el mismo `UPDATE ... WHERE stock >= cantidad`.
 - Demo: tres compras sintéticas con claves UUID fijas; `ensure_demo_sales()` consulta la clave antes de insertar y usa un savepoint por compra, por lo que un reinicio no duplica el descuento.

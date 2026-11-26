@@ -15,16 +15,6 @@ export function useInventorySummary(products) {
     }, {});
     return Object.entries(totals).sort(([, first], [, second]) => second - first);
   }, [products]);
-  const stockSeries = useMemo(() => {
-    const source = products.slice(0, 6);
-    const max = Math.max(...source.map((product) => Number(product.stock)), 1);
-    const points = source.map((product, index) => ({
-      ...product,
-      x: source.length > 1 ? 20 + (index * 260) / (source.length - 1) : 150,
-      y: 118 - (Number(product.stock) / max) * 86,
-    }));
-    return { points, polyline: points.map((point) => `${point.x},${point.y}`).join(" ") };
-  }, [products]);
 
-  return { expiringProducts, stockTotal, categoryTotals, stockSeries };
+  return { expiringProducts, stockTotal, categoryTotals };
 }
