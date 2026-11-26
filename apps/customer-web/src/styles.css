@@ -51,10 +51,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .signup-art { min-height: 100vh; padding: 43px clamp(36px, 6vw, 88px); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; color: #fff; background: #315d43; }
 .signup-art::before { position: absolute; content: ""; inset: 0; opacity: .25; background: radial-gradient(ellipse at 16% 81%, #abc891 0, transparent 42%), radial-gradient(ellipse at 91% 15%, #78a675 0, transparent 42%); }
 .signup-art > *:not(.art-orb) { position: relative; z-index: 1; }
-.eyebrow { color: #c8dfbe; font-size: calc(10px * var(--font-scale)); letter-spacing: 1.45px; font-weight: 700; }
+.eyebrow { color: #c8dfbe; font-size: calc(11px * var(--font-scale)); letter-spacing: 1.45px; font-weight: 700; }
 .art-copy { max-width: 460px; margin: 28px 0 62px; }
 .art-copy h1 { margin: 22px 0 14px; font: 800 clamp(calc(42px * var(--font-scale)), 5.2vw, calc(66px * var(--font-scale)))/1.08 "Manrope", sans-serif; letter-spacing: -3.6px; }
-.art-copy p { max-width: 390px; margin: 0; color: #e0e9df; font-size: calc(16px * var(--font-scale)); line-height: 1.7; }
+.art-copy p { max-width: 430px; margin: 0; color: #e0e9df; font-size: calc(17px * var(--font-scale)); line-height: 1.7; }
 .art-note { display: flex; align-items: center; gap: 14px; max-width: 386px; padding: 17px; border: 1px solid #ffffff30; border-radius: 15px; background: #ffffff0c; }
 .note-icon { display: grid; place-items: center; flex: 0 0 40px; height: 40px; color: #355f45; border-radius: 13px; background: #dceccf; }
 .art-note strong, .art-note small { display: block; }
@@ -102,7 +102,7 @@ input::placeholder { color: #a6aca5; }
   .signup-art { min-height: 0; padding: 26px clamp(32px, 5vw, 72px); }
   .signup-art .brand-logo { width: 214px; max-height: 58px; filter: none; }
   .art-copy { margin: 14px 0 26px; }
-  .art-copy h1 { margin: 14px 0 8px; font-size: clamp(34px, 4.2vw, 52px); line-height: 1.05; letter-spacing: -2.4px; }
+  .art-copy h1 { margin: 14px 0 8px; font-size: clamp(38px, 4.6vw, 56px); line-height: 1.05; letter-spacing: -2.4px; }
   .art-copy p { line-height: 1.5; }
   .art-note { gap: 11px; padding: 11px 13px; }
   .note-icon { flex-basis: 34px; height: 34px; border-radius: 11px; }
@@ -128,7 +128,7 @@ input::placeholder { color: #a6aca5; }
 @media (min-width: 721px) and (max-height: 760px) {
   .signup-art { padding-top: 20px; padding-bottom: 20px; }
   .art-copy { margin: 10px 0 16px; }
-  .art-copy h1 { font-size: clamp(30px, 3.6vw, 44px); }
+  .art-copy h1 { font-size: clamp(34px, 4vw, 48px); }
   .art-note { padding: 8px 10px; }
   .signup-panel { padding-top: 14px; padding-bottom: 10px; }
   .signup-form-wrap h2 { font-size: calc(31px * var(--font-scale)); }

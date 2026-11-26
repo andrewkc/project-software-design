@@ -137,3 +137,16 @@ def test_compose_still_serves_five_services():
     compose = read("docker-compose.yml")
     for service in ("database:", "backend:", "operations-web:", "customer-web:", "admin-web:"):
         assert service in compose, service
+
+
+def test_web_tab_titles_use_middle_dot():
+    operations = read("apps/operations-web/index.html")
+    assert "<title>BodeSmart · Control y operaciones</title>" in operations
+    assert "<title>BodeSmart</title>" not in operations
+
+    customer = read("apps/customer-web/index.html")
+    assert "<title>BodeSmart · Tienda para clientes</title>" in customer
+    assert "BodeSmart — Tienda para clientes" not in customer
+
+    admin = read("apps/admin-web/index.html")
+    assert "<title>BodeSmart · Administración</title>" in admin

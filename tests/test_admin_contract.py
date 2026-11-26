@@ -131,6 +131,9 @@ def test_admin_web_login_has_no_demo_credentials():
     assert "Admin123456" not in login
     assert "demo-credentials" not in login
     assert ".demo-credentials" not in styles
+    assert "Prototipo académico" not in login
+    assert "entrevistas exploratorias" not in login
+    assert ".prototype-note" not in styles
 
 
 def test_admin_profile_is_only_reachable_from_the_account_card():

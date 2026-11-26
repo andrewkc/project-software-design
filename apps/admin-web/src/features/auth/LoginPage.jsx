@@ -49,7 +49,6 @@ export function LoginPage({ onLogin }) {
         </form>
         <p className="auth-error" role="alert">{error}</p>
       </div>
-      <p className="prototype-note">Prototipo académico · entrevistas exploratorias</p>
     </section>
   </div>;
 }

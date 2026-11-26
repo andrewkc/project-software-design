@@ -77,7 +77,10 @@ def test_login_logo_has_no_cream_box_and_auth_heading_is_larger():
     assert "--font-scale: .94" not in compact
     assert ".signup-art .brand-logo" in compact
     assert "background: #f7f8f3" not in compact
-    assert "font-size: clamp(34px, 4.2vw, 52px)" in compact  # titular del panel
+    assert "font-size: clamp(38px, 4.6vw, 56px)" in compact  # titular del panel
+    assert "font-size: clamp(34px, 4vw, 48px)" in compact  # ventana baja
+    assert ".eyebrow { color: #c8dfbe; font-size: calc(11px * var(--font-scale));" in css
+    assert ".art-copy p { max-width: 430px; margin: 0; color: #e0e9df; font-size: calc(17px * var(--font-scale)); line-height: 1.7; }" in css
     assert ".signup-form-wrap h2 { font-size: calc(34px * var(--font-scale)); }" in compact
     assert css.count(".signup-form-wrap h2 { font-size: calc(31px * var(--font-scale)); }") == 2
 

@@ -33,14 +33,14 @@ La IA apoya la decisión. Nunca aprueba promociones, genera compras ni modifica 
 
 **Comprador.** Usa `customer-web` para ver ofertas, armar una cesta y reservar productos por diez minutos. El backend aprueba el pago de prueba y solo entonces descuenta stock; el historial del comprador muestra todos los estados, mientras `Ventas` muestra solo las compras pagadas.
 
-## Las aplicaciones
+## Las aplicaciones en producción
 
 | App | Dominio | Estado |
 | --- | --- | --- |
-| operations-web | app.bodesmart.com | Prototipo actual para jefe y empleado |
-| admin-web | Local `127.0.0.1:5175` | Prototipo del panel de cuentas y bodegas con identidad de `operations-web`; sin dominio público confirmado (ADMIN-01/ADR-008) |
-| customer-web | Local `127.0.0.1:5174` | Prototipo del MVP ampliado: catálogo, cesta, pedidos y pago de prueba (ADR-007); sin dominio público configurado |
-| backend | No expuesto públicamente | Auth, perfiles, productos, categorías, registro asistido, recomendaciones, ventas, `/customer/*` y `/admin/*`; movimientos/lotes pendientes |
+| operations-web | app.bodesmart.online | Prototipo actual para jefe y empleado |
+| admin-web | admin.bodesmart.online | Prototipo del panel de cuentas y bodegas con identidad de `operations-web` |
+| customer-web | bodesmart.online | Prototipo del MVP ampliado: catálogo, cesta, pedidos y pago de prueba (ADR-007) |
+| backend | api.bodesmart.online | Auth, perfiles, productos, categorías, registro asistido, recomendaciones, ventas, `/customer/*` y `/admin/*`; movimientos/lotes pendientes |
 | database | No expuesto públicamente | Esquema y seed aplicados por Docker; sin app dedicada |
 
 El prototipo de operations-web consumes una API HTTP con PostgreSQL: registra productos (también con asistencia de Gemini desde foto, código de barras o voz), muestra el inventario con ID por fila, permite bloquear y desactivar, crea empleados con contraseña generada, incluye una sección de recomendaciones IA solo para el jefe y una sección `Ventas` para jefe y empleado con el historial de compras pagadas de los clientes. Las reglas de roles, propiedad y bloqueo están registradas como decisiones propuestas y aplicadas al prototipo. No son requisitos aprobados para producción.
