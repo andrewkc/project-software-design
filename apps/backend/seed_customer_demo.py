@@ -6,7 +6,9 @@ Run once after database.sql and seed.sql:
 
 It is deliberately additive and idempotent: it never changes existing manager
 or employee accounts, never overwrites a password, price or offer created by
-the owner, and never resurrects expired or deteriorated stock. Credentials for
+the owner, and never resurrects expired or deteriorated stock. The generated
+20% discount is owned by ensure_storefront_offers(), so any offer seeded here
+is refreshed from ProductosBodega on the next catalog read. Credentials for
 the new demo buyer are written to the ignored .demo-credentials.json file.
 """
 

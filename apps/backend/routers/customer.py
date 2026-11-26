@@ -25,6 +25,7 @@ from config import (
     MERCADOPAGO_ACCESS_TOKEN,
     MERCADOPAGO_WEBHOOK_SECRET,
 )
+from database import ensure_storefront_offers
 from sales_service import approve_reserved_order, parsed_uuid, positive_int, release_expired
 from security import create_token, fail, hash_password, identity_from_header, require, verify_password
 
@@ -154,7 +155,24 @@ def me(who=Depends(customer)):
 @router.get("/stores")
 def stores():
     with psycopg.connect(DSN, row_factory=dict_row) as conn:
-        return conn.execute("SELECT id, nombre, direccion FROM Bodega ORDER BY id").fetchall()
+        ensure_storefront_offers(conn)
+        return conn.execute("""SELECT b.id, b.nombre, b.direccion,
+                   (SELECT count(*) FROM ProductosBodega pb
+                     WHERE pb.id_bodega = b.id AND pb.estado = 'activo'
+                       AND COALESCE(pb.bloqueado, FALSE) = FALSE
+                       AND pb.stock > 0 AND pb.precio_venta > 0
+                       AND pb.fecha_vencimiento > CURRENT_DATE) AS product_count,
+                   (SELECT count(*) FROM Oferta o
+                      JOIN ProductosBodega pb ON pb.id_producto = o.id_producto
+                        AND pb.id_bodega = o.id_bodega
+                     WHERE o.id_bodega = b.id AND o.estado = 'activo'
+                       AND o.fecha_inicio <= now() AND o.fecha_fin > now()
+                       AND o.precio_oferta < o.precio_original
+                       AND pb.estado = 'activo' AND pb.fecha_vencimiento > CURRENT_DATE
+                       AND pb.stock > COALESCE((SELECT sum(r.cantidad) FROM ReservaCompra r
+                              WHERE r.id_producto = pb.id_producto AND r.id_bodega = pb.id_bodega
+                                AND r.estado = 'activa'), 0)) AS offer_count
+                   FROM Bodega b ORDER BY b.id""").fetchall()
 
 
 @router.get("/payment-methods")
@@ -179,24 +197,51 @@ def payment_methods():
 
 
 @router.get("/offers")
-def offers(store_id: int | None = None):
+def offers(store_id: int | None = None, page: int = Query(default=1, ge=1)):
+    """Storefront listings: promotions first, then 9 in-stock products per page.
+
+    Every bodega is covered because ensure_storefront_offers() materializes a
+    discounted listing for each eligible ProductosBodega row. Promotions are
+    never pushed to a later page; only rows at their real price are paginated.
+    """
+    columns = """SELECT o.id, o.id_bodega AS store_id, b.nombre AS store_name,
+                        b.direccion AS store_address, p.id AS product_id, p.nombre AS product_name,
+                        p.categoria AS category, p.icono AS icon, p.unidad_medida AS unit,
+                        pb.fecha_vencimiento AS expiry_date, pb.stock,
+                        COALESCE(o.precio_original, pb.precio_venta) AS original_price,
+                        o.precio_oferta AS current_price,
+                        COALESCE((SELECT sum(r.cantidad) FROM ReservaCompra r
+                          WHERE r.id_producto = p.id AND r.id_bodega = b.id AND r.estado = 'activa'), 0) AS reserved
+                        FROM Oferta o JOIN Bodega b ON b.id = o.id_bodega
+                        JOIN Producto p ON p.id = o.id_producto
+                        JOIN ProductosBodega pb ON pb.id_producto = p.id AND pb.id_bodega = b.id"""
+    common = """WHERE o.estado = 'activo' AND o.fecha_inicio <= now() AND o.fecha_fin > now()
+                       AND pb.estado = 'activo' AND pb.fecha_vencimiento > CURRENT_DATE
+                       AND o.precio_oferta > 0
+                       AND pb.stock > COALESCE((SELECT sum(r.cantidad) FROM ReservaCompra r
+                             WHERE r.id_producto = p.id AND r.id_bodega = b.id AND r.estado = 'activa'), 0)
+                       AND (%s::int IS NULL OR b.id = %s)"""
     with psycopg.connect(DSN, row_factory=dict_row) as conn:
         release_expired(conn)
-        rows = conn.execute("""SELECT o.id, o.id_bodega AS store_id, b.nombre AS store_name,
-                       b.direccion AS store_address, p.id AS product_id, p.nombre AS product_name,
-                       p.categoria AS category, p.icono AS icon, p.unidad_medida AS unit,
-                       pb.fecha_vencimiento AS expiry_date, pb.stock,
-                       COALESCE(o.precio_original, pb.precio_venta) AS original_price,
-                       o.precio_oferta AS current_price,
-                       COALESCE((SELECT sum(r.cantidad) FROM ReservaCompra r
-                         WHERE r.id_producto = p.id AND r.id_bodega = b.id AND r.estado = 'activa'), 0) AS reserved
-                       FROM Oferta o JOIN Bodega b ON b.id = o.id_bodega
-                       JOIN Producto p ON p.id = o.id_producto
-                       JOIN ProductosBodega pb ON pb.id_producto = p.id AND pb.id_bodega = b.id
-                       WHERE o.estado = 'activo' AND o.fecha_inicio <= now() AND o.fecha_fin > now()
-                         AND pb.estado = 'activo' AND pb.fecha_vencimiento > CURRENT_DATE
-                         AND o.precio_oferta > 0 AND (%s::int IS NULL OR b.id = %s)
-                       ORDER BY pb.fecha_vencimiento, o.id""", (store_id, store_id)).fetchall()
+        ensure_storefront_offers(conn)
+        if store_id is None:
+            rows = conn.execute(
+                f"{columns} {common} ORDER BY pb.fecha_vencimiento, o.id", (store_id, store_id)
+            ).fetchall()
+        else:
+            promoted = conn.execute(
+                f"""{columns} {common}
+                    AND o.precio_oferta < COALESCE(o.precio_original, pb.precio_venta)
+                    ORDER BY pb.fecha_vencimiento, o.id""",
+                (store_id, store_id),
+            ).fetchall()
+            regular = conn.execute(
+                f"""{columns} {common}
+                    AND o.precio_oferta = COALESCE(o.precio_original, pb.precio_venta)
+                    ORDER BY p.nombre, o.id LIMIT 9 OFFSET %s""",
+                (store_id, store_id, (page - 1) * 9),
+            ).fetchall()
+            rows = promoted + regular
     return [
         {
             "id": row["id"],
@@ -212,6 +257,7 @@ def offers(store_id: int | None = None):
             "original_price": str(row["original_price"]),
             "current_price": str(row["current_price"]),
             "available": max(0, row["stock"] - row["reserved"]),
+            "is_offer": Decimal(str(row["original_price"])) > Decimal(str(row["current_price"])),
         }
         for row in rows if row["stock"] > row["reserved"]
     ]

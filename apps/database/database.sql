@@ -87,7 +87,8 @@ CREATE TABLE Oferta (
     precio_oferta DECIMAL(10,2) NOT NULL,
     fecha_inicio TIMESTAMP NOT NULL,
     fecha_fin TIMESTAMP NOT NULL,
-    estado VARCHAR(20) NOT NULL DEFAULT 'activo'
+    estado VARCHAR(20) NOT NULL DEFAULT 'activo',
+    es_generada BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE Carrito (

@@ -66,9 +66,9 @@ def scenario():
             )
             offer = conn.execute(
                 """INSERT INTO Oferta(id_producto, id_bodega, precio_original, precio_oferta,
-                                      fecha_inicio, fecha_fin, estado)
+                                      fecha_inicio, fecha_fin, estado, es_generada)
                    VALUES (%s, %s, 5.00, 3.50, now() - interval '1 day',
-                           now() + interval '20 days', 'activo') RETURNING id""",
+                           now() + interval '20 days', 'activo', FALSE) RETURNING id""",
                 (product, store_id),
             ).fetchone()["id"]
             products.append(product)
@@ -102,7 +102,8 @@ def scenario():
                 conn.execute("DELETE FROM DetalleCompra WHERE id_compra = ANY(%s)", (ids,))
                 conn.execute("DELETE FROM Compra WHERE id = ANY(%s)", (ids,))
             conn.execute("DELETE FROM Cliente WHERE id = %s", (user_id,))
-        conn.execute("DELETE FROM Oferta WHERE id = ANY(%s)", (offers,))
+        # Include generated rows created by /customer/offers reads.
+        conn.execute("DELETE FROM Oferta WHERE id_producto = ANY(%s)", (products,))
         conn.execute("DELETE FROM ProductosBodega WHERE id_producto = ANY(%s)", (products,))
         conn.execute("DELETE FROM Producto WHERE id = ANY(%s)", (products,))
         conn.execute("DELETE FROM Bodega WHERE id IN (%s, %s)", (store, other_store))

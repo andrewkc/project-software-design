@@ -26,7 +26,13 @@ const post = (path, data) => request(path, { method: "POST", body: JSON.stringif
 export const api = {
   stores: () => request("/stores"),
   paymentMethods: () => request("/payment-methods"),
-  offers: (storeId) => request("/offers" + (storeId ? `?store_id=${storeId}` : "")),
+  offers: (storeId, page = 1) => {
+    const params = new URLSearchParams();
+    if (storeId) params.set("store_id", storeId);
+    if (page > 1) params.set("page", page);
+    const query = params.toString();
+    return request("/offers" + (query ? `?${query}` : ""));
+  },
   register: (data) => post("/auth/register", data),
   login: (data) => post("/auth/login", data),
   me: () => request("/auth/me"),

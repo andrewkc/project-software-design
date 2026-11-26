@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CustomerLayout } from "./components/layout/CustomerLayout";
 import { Icon } from "./components/Icon";
 import { AuthScreen } from "./features/auth/AuthScreen";
@@ -31,6 +31,10 @@ export default function App() {
   const [orders, setOrders] = useState([]);
   const [activeOrder, setActiveOrder] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState(null);
+  const [storeCatalog, setStoreCatalog] = useState([]);
+  const [storePage, setStorePage] = useState(1);
+  const [storeHasMore, setStoreHasMore] = useState(false);
+  const [storeLoading, setStoreLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [authMode, setAuthMode] = useState("login");
   const [filters, setFilters] = useState(emptyFilters);
@@ -39,7 +43,27 @@ export default function App() {
   const [loadError, setLoadError] = useState("");
   const [toast, setToast] = useState("");
   const [notice, setNotice] = useState(null);
+  const [refreshTick, setRefreshTick] = useState(0);
   const pendingKeyRef = useRef(null);
+
+  const refreshCatalog = useCallback(async () => {
+    const [storesResult, offersResult] = await Promise.allSettled([api.stores(), api.offers()]);
+    if (storesResult.status === "fulfilled") setStores(storesResult.value);
+    if (offersResult.status === "fulfilled") setOffers(offersResult.value);
+    setRefreshTick((tick) => tick + 1);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const refresh = () => { if (active) refreshCatalog(); };
+    window.addEventListener("focus", refresh);
+    const timer = window.setInterval(refresh, 15000);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refresh);
+      window.clearInterval(timer);
+    };
+  }, [refreshCatalog]);
 
   const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const cartStoreId = cart.length ? cart[0].store_id : null;
@@ -82,6 +106,24 @@ export default function App() {
     })();
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!selectedStoreId || activeTab !== "stores") return undefined;
+    let active = true;
+    setStoreLoading(true);
+    api.offers(selectedStoreId, storePage)
+      .then((items) => {
+        if (!active) return;
+        const pageItems = Array.isArray(items) ? items : [];
+        setStoreCatalog((previous) => storePage === 1
+          ? pageItems
+          : [...previous, ...pageItems.filter((item) => !previous.some((old) => old.id === item.id))]);
+        setStoreHasMore(pageItems.filter((item) => item.is_offer === false).length === 9);
+      })
+      .catch(() => { if (active) setToast("No se pudo cargar el catálogo de la bodega."); })
+      .finally(() => { if (active) setStoreLoading(false); });
+    return () => { active = false; };
+  }, [selectedStoreId, storePage, activeTab, refreshTick]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -261,9 +303,24 @@ export default function App() {
     pendingKeyRef.current = null;
   }
 
+  function openStore(id) {
+    setSelectedStoreId(id);
+    setStorePage(1);
+    setStoreCatalog([]);
+    setStoreHasMore(false);
+    setActiveTab("stores");
+  }
+
+  function closeStore() {
+    setSelectedStoreId(null);
+    setStorePage(1);
+    setStoreCatalog([]);
+    setStoreHasMore(false);
+  }
+
   function navigate(tab) {
     if (tab !== "orders") setActiveOrder(null);
-    if (tab !== "stores") setSelectedStoreId(null);
+    if (tab !== "stores") closeStore();
     setActiveTab(tab);
   }
 
@@ -280,8 +337,8 @@ export default function App() {
   return <>
     <CustomerLayout user={profile} activeTab={activeTab} cartCount={cartCount} onNavigate={navigate}>
       {loadError && <div className="auth-error" role="alert">{loadError}</div>}
-      {activeTab === "home" && <HomePage user={profile} stores={stores} offers={offers} filters={filters} onFiltersChange={setFilters} onClearFilters={() => setFilters(emptyFilters)} onAdd={addToCart} onNavigate={navigate} onOpenStore={(id) => { setSelectedStoreId(id); setActiveTab("stores"); }} onCart={() => navigate("cart")} cartCount={cartCount} />}
-      {activeTab === "stores" && <StoresPage stores={stores} offers={offers} selectedStoreId={selectedStoreId} onOpenStore={setSelectedStoreId} onBack={() => setSelectedStoreId(null)} onAdd={addToCart} onCart={() => navigate("cart")} cartCount={cartCount} />}
+      {activeTab === "home" && <HomePage user={profile} stores={stores} offers={offers} filters={filters} onFiltersChange={setFilters} onClearFilters={() => setFilters(emptyFilters)} onAdd={addToCart} onNavigate={navigate} onOpenStore={openStore} onCart={() => navigate("cart")} cartCount={cartCount} />}
+      {activeTab === "stores" && <StoresPage stores={stores} offers={storeCatalog} selectedStoreId={selectedStoreId} onOpenStore={openStore} onBack={closeStore} onLoadMore={() => setStorePage((current) => current + 1)} hasMore={storeHasMore} loading={storeLoading} onAdd={addToCart} onCart={() => navigate("cart")} cartCount={cartCount} />}
       {activeTab === "cart" && <CartPage cart={cart} stores={stores} onChangeQuantity={changeQuantity} onRemove={removeFromCart} onCheckout={placeOrder} onNavigate={navigate} user={user} busy={busy} paymentMethods={paymentMethods} paymentMethod={paymentMethod} onPaymentMethodChange={changePaymentMethod} />}
       {activeTab === "orders" && <OrdersPage orders={orders} activeOrder={activeOrder} busy={busy} stores={stores} onSelectOrder={setActiveOrder} onBack={() => setActiveOrder(null)} onPay={pay} onVerify={refreshOrder} onNavigate={navigate} />}
       {activeTab === "profile" && <ProfilePage user={profile} orderCount={orders.filter((order) => order.state === "pagado").length} onLogout={logout} onNavigate={navigate} />}

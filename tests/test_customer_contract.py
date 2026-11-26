@@ -193,19 +193,57 @@ def test_profile_page_reuses_the_sidebar_profile_card():
     assert ".profile-card-page .profile-avatar" in css
 
 
-def test_storefront_offers_are_derived_from_san_martin_inventory():
+def test_storefront_offers_are_generated_for_every_bodega():
     database = read("apps/backend/database.py")
     router = read("apps/backend/routers/customer.py")
     view = read("apps/customer-web/src/features/catalog/StoresPage.jsx")
     assert "def ensure_storefront_offers(conn):" in database
     assert "ensure_storefront_offers(conn)" in database
-    assert '"Bodega San Martín"' in database
-    assert "FROM ProductosBodega pb JOIN Producto p ON p.id = pb.id_producto" in database
-    assert "SELECT 1 FROM Oferta WHERE id_producto = %s AND id_bodega = %s" in database
-    assert 'DEMO_DISCOUNT_RATE = Decimal("0.8")' in database  # solo algunos productos
+    assert "SELECT id FROM Bodega ORDER BY id" in database
+    assert "FROM ProductosBodega pb" in database
+    assert '"es_generada"' in database
+    assert "UPDATE Oferta" in database and "INSERT INTO Oferta" in database
+    assert 'STOREFRONT_DISCOUNT_RATE = Decimal("0.8")' in database
+    assert '"Bodega San Martín"' not in database
+    assert "DEMO_DISCOUNT_PRODUCTS" not in database
     assert "FROM Oferta o JOIN Bodega b ON b.id = o.id_bodega" in router
     assert "const discounted = storeProducts.filter" in view
     assert "con descuento de" in view
+
+
+def test_storefront_lists_every_bodega_with_paginated_stock():
+    database = read("apps/backend/database.py")
+    router = read("apps/backend/routers/customer.py")
+    api = read("apps/customer-web/src/lib/api.js")
+    view = read("apps/customer-web/src/features/catalog/StoresPage.jsx")
+    app = read("apps/customer-web/src/App.jsx")
+    assert "SELECT id FROM Bodega ORDER BY id" in database
+    assert "ensure_storefront_offers(conn)" in router
+    assert "page: int = Query(default=1, ge=1)" in router
+    assert "LIMIT 9 OFFSET %s" in router
+    assert '"is_offer":' in router
+    assert 'params.set("page", page)' in api
+    assert "Ver más productos" in view
+    assert "storeHasMore" in app
+    assert "api.offers(selectedStoreId, storePage)" in app
+
+
+def test_home_shows_products_from_every_store():
+    home = read("apps/customer-web/src/features/home/HomePage.jsx")
+    assert "Productos y ofertas de todas las bodegas" in home
+    assert "Productos disponibles" in home
+    assert "groupOffersByStore(stores, sorted" in home
+    assert "aDeal - bDeal" in home
+    assert "store.offers.length" in home
+    assert "Ofertas activas" not in home
+
+
+def test_customer_catalog_refreshes_on_focus_and_interval():
+    app = read("apps/customer-web/src/App.jsx")
+    assert "const refreshCatalog = useCallback" in app
+    assert 'window.addEventListener("focus", refresh)' in app
+    assert "window.setInterval(refresh, 15000)" in app
+    assert "refreshTick" in app
 
 
 def test_demo_seed_is_additive_and_credentials_are_ignored():

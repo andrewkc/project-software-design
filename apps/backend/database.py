@@ -20,15 +20,11 @@ DEMO_ADMIN_CORREO = "admin@bodesmart.local"
 DEMO_ADMIN_PASSWORD = "Admin123456"
 
 # Local storefront data. Everything below is derived from rows already stored
-# in ProductosBodega: no product, price or stock is invented. Only a fixed
-# subset receives a discount; the rest are published at their real price so
-# the store shows products, not just promotions.
-DEMO_STORE_NAME = "Bodega San Martín"
-DEMO_DISCOUNT_PRODUCTS = frozenset({
-    "Arroz extra", "Galletas de soda", "Atún en lata", "Leche chocolatada",
-    "Yogurt de fresa", "Manzana roja", "Fideos largos", "Jugo de naranja",
-})
-DEMO_DISCOUNT_RATE = Decimal("0.8")
+# in ProductosBodega: no product, price or stock is invented. The generated
+# storefront discount applies to every eligible product of every bodega; a
+# promotion entered by the jefe is flagged es_generada = FALSE and is never
+# overwritten by this generator.
+STOREFRONT_DISCOUNT_RATE = Decimal("0.8")
 
 
 def ensure_demo_admin(conn):
@@ -75,6 +71,9 @@ def ensure_schema():
         # Purchase tables follow the checkout contract used by customer-web.
         "ALTER TABLE Oferta ADD COLUMN IF NOT EXISTS id_bodega INT REFERENCES Bodega(id)",
         "ALTER TABLE Oferta ADD COLUMN IF NOT EXISTS precio_original DECIMAL(10,2)",
+        # Legacy generated rows predate this flag; DEFAULT TRUE marks them as
+        # generated so the first catalog read can refresh their discount.
+        "ALTER TABLE Oferta ADD COLUMN IF NOT EXISTS es_generada BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE Compra ADD COLUMN IF NOT EXISTS reserva_hasta TIMESTAMPTZ",
         "ALTER TABLE Compra ADD COLUMN IF NOT EXISTS idempotency_key UUID UNIQUE",
         "ALTER TABLE Compra ADD COLUMN IF NOT EXISTS request_hash VARCHAR(64)",
@@ -118,45 +117,63 @@ def ensure_schema():
 
 
 def ensure_storefront_offers(conn):
-    """Publish Bodega San Martín products for /customer/offers.
+    """Publish a generated 20% offer for every in-stock product of every bodega.
 
     Only active, unlocked stock with a future expiry and a positive price is
     used, matching the filter already applied by /customer/offers: no expired
-    product is published. An existing promotion is never overwritten, which
-    makes this safe to repeat on every backend start.
+    product is published. Generated rows are refreshed from current inventory
+    prices; rows flagged es_generada = FALSE belong to the jefe and are never
+    touched. A bodega or product created after startup therefore appears
+    without a restart because this runs on every /stores and /offers read.
     """
-    store = conn.execute(
-        "SELECT id FROM Bodega WHERE nombre = %s ORDER BY id LIMIT 1",
-        (DEMO_STORE_NAME,),
-    ).fetchone()
-    if not store:
-        return
-    products = conn.execute(
-        """SELECT pb.id_producto, p.nombre, pb.precio_venta
-           FROM ProductosBodega pb JOIN Producto p ON p.id = pb.id_producto
-           WHERE pb.id_bodega = %s AND pb.estado = 'activo'
-             AND COALESCE(pb.bloqueado, FALSE) = FALSE
-             AND pb.stock > 0 AND pb.precio_venta > 0
-             AND pb.fecha_vencimiento > CURRENT_DATE
-           ORDER BY pb.id_producto""",
-        (store["id"],),
-    ).fetchall()
-    for product in products:
-        if conn.execute(
-            "SELECT 1 FROM Oferta WHERE id_producto = %s AND id_bodega = %s",
-            (product["id_producto"], store["id"]),
-        ).fetchone():
-            continue
-        price = Decimal(str(product["precio_venta"]))
-        discounted = product["nombre"] in DEMO_DISCOUNT_PRODUCTS
-        offer_price = (price * DEMO_DISCOUNT_RATE).quantize(Decimal("0.01")) if discounted else price
-        conn.execute(
-            """INSERT INTO Oferta(id_producto, id_bodega, precio_original,
-                                  precio_oferta, fecha_inicio, fecha_fin, estado)
-               VALUES (%s, %s, %s, %s, now() - interval '1 day',
-                       now() + interval '365 days', 'activo')""",
-            (product["id_producto"], store["id"], price, offer_price),
-        )
+    # Serialize concurrent catalog reads so two requests cannot publish the
+    # same product twice before either transaction commits.
+    conn.execute("SELECT pg_advisory_xact_lock(%s)", (70620261126,))
+    stores = conn.execute("SELECT id FROM Bodega ORDER BY id").fetchall()
+    for store in stores:
+        products = conn.execute(
+            """SELECT pb.id_producto, pb.precio_venta
+               FROM ProductosBodega pb
+               WHERE pb.id_bodega = %s AND pb.estado = 'activo'
+                 AND COALESCE(pb.bloqueado, FALSE) = FALSE
+                 AND pb.stock > 0 AND pb.precio_venta > 0
+                 AND pb.fecha_vencimiento > CURRENT_DATE
+               ORDER BY pb.id_producto""",
+            (store["id"],),
+        ).fetchall()
+        for product in products:
+            price = Decimal(str(product["precio_venta"]))
+            offer_price = (price * STOREFRONT_DISCOUNT_RATE).quantize(Decimal("0.01"))
+            existing = conn.execute(
+                """SELECT id, es_generada FROM Oferta
+                   WHERE id_producto = %s AND id_bodega = %s""",
+                (product["id_producto"], store["id"]),
+            ).fetchone()
+            if existing and not existing["es_generada"]:
+                continue
+            if existing:
+                conn.execute(
+                    """UPDATE Oferta
+                          SET precio_original = %s, precio_oferta = %s,
+                              fecha_inicio = now() - interval '1 day',
+                              fecha_fin = now() + interval '365 days',
+                              estado = 'activo'
+                        WHERE id = %s AND (
+                              precio_original IS DISTINCT FROM %s
+                           OR precio_oferta IS DISTINCT FROM %s
+                           OR estado <> 'activo'
+                           OR fecha_fin <= now())""",
+                    (price, offer_price, existing["id"], price, offer_price),
+                )
+            else:
+                conn.execute(
+                    """INSERT INTO Oferta(id_producto, id_bodega, precio_original,
+                                          precio_oferta, fecha_inicio, fecha_fin,
+                                          estado, es_generada)
+                       VALUES (%s, %s, %s, %s, now() - interval '1 day',
+                               now() + interval '365 days', 'activo', TRUE)""",
+                    (product["id_producto"], store["id"], price, offer_price),
+                )
 
 
 def profile_response(row: dict, rol: str) -> dict:
