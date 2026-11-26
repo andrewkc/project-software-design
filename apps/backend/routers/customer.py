@@ -31,6 +31,7 @@ from security import create_token, fail, hash_password, identity_from_header, re
 router = APIRouter(prefix="/customer")
 MP_API = "https://api.mercadopago.com"
 RESERVATION_SECONDS = 600
+PAYMENT_METHODS = ("LOCAL_SIMULATION", "MERCADOPAGO_TEST")
 
 
 def customer(who=Depends(identity_from_header)):
@@ -43,6 +44,18 @@ def customer(who=Depends(identity_from_header)):
     if not row:
         fail(401, "La cuenta no está activa")
     return who
+
+
+def requested_payment_method(body: dict) -> str:
+    """Resolve the buyer's choice, defaulting to the configured provider."""
+    method = body.get("metodo_pago") or (
+        "MERCADOPAGO_TEST" if MERCADOPAGO_ACCESS_TOKEN else "LOCAL_SIMULATION"
+    )
+    if method not in PAYMENT_METHODS:
+        fail(400, "Método de pago no disponible")
+    if method == "MERCADOPAGO_TEST" and not MERCADOPAGO_ACCESS_TOKEN:
+        fail(503, "Mercado Pago de prueba no está configurado")
+    return method
 
 
 def _order(conn, order_id, customer_id, lock=False):
@@ -62,9 +75,13 @@ def _order_payload(conn, row):
                            FROM DetalleCompra d JOIN Producto p ON p.id = d.id_producto
                            WHERE d.id_compra = %s ORDER BY d.id""", (row["id"],)).fetchall()
     payment = conn.execute(
-        """SELECT estado, id_transaccion_externa FROM Pago
+        """SELECT metodo_pago, estado, id_transaccion_externa FROM Pago
            WHERE id_compra = %s ORDER BY id DESC LIMIT 1""", (row["id"],)
     ).fetchone()
+    payment_mode = (
+        payment["metodo_pago"] if payment and payment["metodo_pago"] in PAYMENT_METHODS
+        else "MERCADOPAGO_TEST" if MERCADOPAGO_ACCESS_TOKEN else "LOCAL_SIMULATION"
+    )
     return {
         "id": row["id"],
         "store_id": row["id_bodega"],
@@ -74,7 +91,7 @@ def _order_payload(conn, row):
         "total": str(row["total"]),
         "reservation_until": row["reserva_hasta"].isoformat() if row["reserva_hasta"] else None,
         "paid_at": row["fecha_pago"].isoformat() if row["fecha_pago"] else None,
-        "payment_mode": "MERCADOPAGO_TEST" if MERCADOPAGO_ACCESS_TOKEN else "LOCAL_SIMULATION",
+        "payment_mode": payment_mode,
         "payment_started": bool(payment and payment["id_transaccion_externa"]),
         "lines": [
             {
@@ -138,6 +155,27 @@ def me(who=Depends(customer)):
 def stores():
     with psycopg.connect(DSN, row_factory=dict_row) as conn:
         return conn.execute("SELECT id, nombre, direccion FROM Bodega ORDER BY id").fetchall()
+
+
+@router.get("/payment-methods")
+def payment_methods():
+    """Methods offered by the storefront; the token is never exposed."""
+    return {
+        "metodos": [
+            {
+                "id": "LOCAL_SIMULATION",
+                "label": "Pago local de prueba",
+                "detalle": "Aprobación inmediata. La venta y el stock se registran al confirmar.",
+                "disponible": True,
+            },
+            {
+                "id": "MERCADOPAGO_TEST",
+                "label": "Mercado Pago de prueba",
+                "detalle": "Checkout de prueba. El backend verifica el pago antes de descontar stock.",
+                "disponible": bool(MERCADOPAGO_ACCESS_TOKEN),
+            },
+        ]
+    }
 
 
 @router.get("/offers")
@@ -213,8 +251,14 @@ def create_order(body: dict = Body(...), who=Depends(customer)):
         seen.add(offer_id)
         normalized.append((offer_id, quantity))
     normalized.sort()
+    # Only persist a payment row when the storefront explicitly chose a method.
+    # Legacy callers that omit it keep the previous behaviour: the provider is
+    # resolved when the payment is actually started.
+    explicit_method = body.get("metodo_pago") is not None
+    method = requested_payment_method(body)
     fingerprint = hashlib.sha256(
-        json.dumps(normalized, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        json.dumps({"lines": normalized, "metodo_pago": method},
+                   separators=(",", ":"), sort_keys=True).encode("utf-8")
     ).hexdigest()
     with psycopg.connect(DSN, row_factory=dict_row) as conn:
         release_expired(conn)
@@ -280,6 +324,15 @@ def create_order(body: dict = Body(...), who=Depends(customer)):
             conn.execute("""INSERT INTO ReservaCompra(id_compra, id_producto, id_bodega, cantidad)
                             VALUES (%s, %s, %s, %s)""",
                          (order["id"], row["id_producto"], row["id_bodega"], quantity))
+        if explicit_method:
+            # Persist the buyer's choice so it survives a reload. The provider
+            # key is generated here and reused by /checkout for Mercado Pago.
+            conn.execute(
+                """INSERT INTO Pago(id_compra, metodo_pago, monto, estado, clave_proveedor)
+                   VALUES (%s, %s, %s, 'pendiente', %s)""",
+                (order["id"], method, total,
+                 uuid.uuid4() if method == "MERCADOPAGO_TEST" else None),
+            )
         return _order_payload(conn, _order(conn, order["id"], who["id"]))
 
 
@@ -306,6 +359,11 @@ def simulate_payment(order_id: int, who=Depends(customer)):
                         SELECT %s, 'LOCAL_SIMULATION', %s, 'aprobado', now()
                         WHERE NOT EXISTS(SELECT 1 FROM Pago WHERE id_compra = %s)""",
                      (order_id, order["total"], order_id))
+        conn.execute(
+            """UPDATE Pago SET estado = 'aprobado', fecha_pago = now()
+               WHERE id_compra = %s AND metodo_pago = 'LOCAL_SIMULATION'""",
+            (order_id,),
+        )
         return _order_payload(conn, _order(conn, order_id, who["id"]))
 
 

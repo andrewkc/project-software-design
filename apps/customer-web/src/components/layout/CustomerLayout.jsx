@@ -38,11 +38,26 @@ export function CustomerLayout({ user, activeTab, cartCount, onNavigate, childre
 }
 
 function MobileNav({ activeTab, cartCount, onNavigate }) {
-  return <nav className="mobile-nav" aria-label="Navegación móvil" data-count={mobileNavigation.length}>
-    {mobileNavigation.map((item) => <button key={item.id} type="button" className={activeTab === item.id ? "active" : ""} onClick={() => onNavigate(item.id)}>
-      <Icon name={item.icon} size={19} />
-      <span>{item.label}</span>
-      {item.id === "cart" && cartCount > 0 && <i />}
-    </button>)}
-  </nav>;
+  const [open, setOpen] = React.useState(false);
+  const sections = [...mobileNavigation, { id: "profile", label: "Mi cuenta", icon: "user" }];
+  const current = sections.find((item) => item.id === activeTab);
+  const choose = (id) => {
+    setOpen(false);
+    onNavigate(id);
+  };
+  return <div className="mobile-nav" data-count={sections.length}>
+    <button type="button" className="mobile-menu-trigger" aria-haspopup="menu" aria-expanded={open} aria-controls="customer-mobile-sections" aria-label={open ? "Cerrar menú de secciones" : "Abrir menú de secciones"} onClick={() => setOpen((value) => !value)}>
+      <Icon name={open ? "close" : "menu"} size={21} />
+      <span>Menú</span>
+      {current && <small>{current.label}</small>}
+    </button>
+    {open && <div className="mobile-menu-panel" id="customer-mobile-sections" role="menu" aria-label="Secciones de la tienda">
+      <p className="mobile-menu-caption">Secciones</p>
+      {sections.map((item) => <button key={item.id} type="button" role="menuitem" className={activeTab === item.id ? "active" : ""} onClick={() => choose(item.id)}>
+        <Icon name={item.icon} size={19} />
+        <span>{item.label}</span>
+        {item.id === "cart" && cartCount > 0 && <span className="nav-count">{cartCount}</span>}
+      </button>)}
+    </div>}
+  </div>;
 }

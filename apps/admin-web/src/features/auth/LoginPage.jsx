@@ -23,7 +23,7 @@ export function LoginPage({ onLogin }) {
 
   return <div className="signup-shell">
     <section className="signup-art">
-      <div className="art-brand"><Brand light /></div>
+      <Brand light />
       <div className="art-copy">
         <p className="eyebrow">ADMINISTRACIÓN</p>
         <h1>Controla el acceso,<br />no el inventario.</h1>
@@ -41,16 +41,13 @@ export function LoginPage({ onLogin }) {
         <h2>Iniciar sesión</h2>
         <p className="form-intro">Ingresa con tu cuenta de administrador.</p>
         <form className="auth-form" onSubmit={handleSubmit}>
-          <label className="auth-field"><span>Correo</span><input type="email" autoComplete="username" value={correo} onChange={(event) => setCorreo(event.target.value)} placeholder="admin@bodesmart.local" required /></label>
+          <label className="auth-field"><span>Correo</span><input type="email" autoComplete="username" value={correo} onChange={(event) => setCorreo(event.target.value)} placeholder="tu@correo.com" required /></label>
           <label className="auth-field"><span>Contraseña</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Tu contraseña" required /></label>
           <button className="button button-primary button-full" type="submit" disabled={loading}>
             <Icon name="lock" size={16} />{loading ? "Ingresando…" : "Ingresar al panel"}
           </button>
         </form>
         <p className="auth-error" role="alert">{error}</p>
-        <div className="demo-credentials">
-          Demo local: <code>admin@bodesmart.local</code> / <code>Admin123456</code>
-        </div>
       </div>
       <p className="prototype-note">Prototipo académico · entrevistas exploratorias</p>
     </section>

@@ -71,10 +71,11 @@ def test_customer_ui_reuses_operations_visual_tokens():
 def test_login_logo_has_no_cream_box_and_auth_heading_is_larger():
     css = read("apps/customer-web/src/styles.css")
     compact = css.split("/* Acceso compacto")[1].split("/* Shell lateral")[0]
-    assert "--font-scale: 1.08" in compact  # se conserva la escala anterior
+    assert "--font-scale: 1.2" in compact  # tipografía grande sin desplazamiento
+    assert "--font-scale: 1.08" not in compact
     assert "--font-scale: 1;" not in compact
     assert "--font-scale: .94" not in compact
-    assert ".art-brand { display: inline-flex; }" in compact
+    assert ".signup-art .brand-logo" in compact
     assert "background: #f7f8f3" not in compact
     assert "font-size: clamp(34px, 4.2vw, 52px)" in compact  # titular del panel
     assert ".signup-form-wrap h2 { font-size: calc(34px * var(--font-scale)); }" in compact
@@ -84,8 +85,10 @@ def test_login_logo_has_no_cream_box_and_auth_heading_is_larger():
 def test_customer_menu_and_profile_role_match_approved_copy():
     nav = read("apps/customer-web/src/data/navigation.js")
     layout = read("apps/customer-web/src/components/layout/CustomerLayout.jsx")
-    for label in ("Inicio", "Bodegas", "Mi cesta", "Mis pedidos", "Perfil"):
+    for label in ("Inicio", "Bodegas", "Mi cesta", "Mis pedidos"):
         assert f'label: "{label}"' in nav, label
+    assert 'label: "Perfil"' not in nav  # la tarjeta inferior abre el perfil
+    assert 'onClick={() => onNavigate("profile")}' in layout
     assert "<small>Cliente</small>" in layout
     stores = read("apps/customer-web/src/features/catalog/StoresPage.jsx")
     orders = read("apps/customer-web/src/features/orders/OrdersPage.jsx")
@@ -96,7 +99,37 @@ def test_customer_menu_and_profile_role_match_approved_copy():
     assert "Pagar con Mercado Pago de prueba" in orders
     assert "Simular pago" in orders
     assert "Comprobar estado" in orders
-    assert "Demo académica · Pagos de prueba" in auth
+    assert "Pagos de prueba · Compras reales en la bodega" not in auth
+    assert "demo-note" not in auth
+    assert "datos de demostración" not in auth
+
+
+def test_customer_purchases_always_go_through_the_backend():
+    app = read("apps/customer-web/src/App.jsx")
+    assert "demoMode" not in app
+    assert "demoOrder" not in app
+    assert "demoOffers" not in app
+    assert "api.createOrder(" in app
+    assert "api.simulatePayment(" in app
+    assert "No se pudo conectar con el backend" in app  # sin catálogo falso
+
+
+def test_customer_can_choose_mercadopago_or_local_payment():
+    api = read("apps/customer-web/src/lib/api.js")
+    app = read("apps/customer-web/src/App.jsx")
+    cart = read("apps/customer-web/src/features/cart/CartPage.jsx")
+    orders = read("apps/customer-web/src/features/orders/OrdersPage.jsx")
+    router = read("apps/backend/routers/customer.py")
+    assert 'paymentMethods: () => request("/payment-methods")' in api
+    assert "@router.get(\"/payment-methods\")" in router
+    assert '"disponible": bool(MERCADOPAGO_ACCESS_TOKEN)' in router  # sin filtrar la clave
+    assert "paymentMethods" in app
+    assert "metodo_pago: paymentMethod" in app
+    assert "api.checkout(activeOrder.id)" in app
+    assert "Mercado Pago de prueba" in cart
+    assert "payment-brand-mp" in cart
+    assert "paymentMethod" in orders
+    assert '"Pagar con Mercado Pago de prueba"' in orders
 
 
 def test_auth_forms_have_balanced_jsx_roots():
@@ -121,16 +154,23 @@ def test_official_logos_are_copied_into_customer_web_and_used():
     assert '"/assets/BodeSmart-Logo.png"' in brand
     assert '"/assets/BodeSmart-Mobile-Logo.png"' in brand
     assert "<Brand mobile />" in layout
-    assert 'className="art-brand"' in read("apps/customer-web/src/features/auth/AuthScreen.jsx")
+    assert '<Brand className="brand-light" />' in read("apps/customer-web/src/features/auth/AuthScreen.jsx")
     assert ".brand-logo" in css
     assert ".sidebar-brand .brand-logo" in css
-    assert ".art-brand .brand-logo" in css
+    assert ".signup-art .brand-logo" in css
+
+
+def test_internal_logo_has_no_button_border_or_box():
+    css = read("apps/customer-web/src/styles.css")
+    brand = next(line for line in css.splitlines() if line.startswith(".sidebar-brand {"))
+    assert "border: 0" in brand
+    assert "background: transparent" in brand
 
 
 def test_auth_screen_has_a_compact_desktop_layout():
     css = read("apps/customer-web/src/styles.css")
     assert "@media (min-width: 721px)" in css
-    assert ".signup-shell { --font-scale: 1.08; height: 100vh; min-height: 0; }" in css
+    assert ".signup-shell { --font-scale: 1.2; height: 100vh; min-height: 0; }" in css
     assert ".signup-panel { height: 100vh; min-height: 0;" in css
     assert ".auth-form input { height: 50px;" in css
 
@@ -148,6 +188,21 @@ def test_profile_page_reuses_the_sidebar_profile_card():
         assert token in page, token
     assert ".profile-card-page" in css
     assert ".profile-card-page .profile-avatar" in css
+
+
+def test_storefront_offers_are_derived_from_san_martin_inventory():
+    database = read("apps/backend/database.py")
+    router = read("apps/backend/routers/customer.py")
+    view = read("apps/customer-web/src/features/catalog/StoresPage.jsx")
+    assert "def ensure_storefront_offers(conn):" in database
+    assert "ensure_storefront_offers(conn)" in database
+    assert '"Bodega San Martín"' in database
+    assert "FROM ProductosBodega pb JOIN Producto p ON p.id = pb.id_producto" in database
+    assert "SELECT 1 FROM Oferta WHERE id_producto = %s AND id_bodega = %s" in database
+    assert 'DEMO_DISCOUNT_RATE = Decimal("0.8")' in database  # solo algunos productos
+    assert "FROM Oferta o JOIN Bodega b ON b.id = o.id_bodega" in router
+    assert "const discounted = storeProducts.filter" in view
+    assert "con descuento de" in view
 
 
 def test_demo_seed_is_additive_and_credentials_are_ignored():
@@ -187,7 +242,7 @@ def test_customer_web_is_wired_into_docker_compose():
 def test_customer_api_contract_matches_router():
     api = read("apps/customer-web/src/lib/api.js")
     for path in ("/stores", "/offers", "/auth/register", "/auth/login", "/auth/me",
-                 "/orders", "/simulate-payment", "/checkout", "/verify-payment"):
+                 "/payment-methods", "/orders", "/simulate-payment", "/checkout", "/verify-payment"):
         assert path in api, path
     assert "${BASE}/customer${path}" in api
     assert 'bodesmart_customer_token' in api

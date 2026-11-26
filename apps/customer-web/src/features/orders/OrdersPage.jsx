@@ -23,6 +23,8 @@ export function OrdersPage({ orders, activeOrder, busy, stores, onSelectOrder, o
 function OrderDetail({ order, busy, stores, onBack, onPay, onVerify, onNavigate }) {
   const storeName = order.store_name || stores.find((store) => store.id === order.store_id)?.nombre || "Bodega";
   const canPay = order.state === "pendiente";
+  const isMarketplace = order.payment_mode === "MERCADOPAGO_TEST";
+  const paymentLabel = isMarketplace ? "Mercado Pago de prueba" : "Pago local de prueba";
   return <div className="page-content inner-page">
     <button className="back-link" type="button" onClick={onBack}><Icon name="chevronLeft" size={16} />Mis pedidos</button>
     <section className="welcome-row"><div><span className="date-greeting">PEDIDO #{order.id}</span><h1>{orderTitle(order.state)}</h1><p className="welcome-subtitle">{orderSummary(order.state)}</p></div></section>
@@ -37,8 +39,12 @@ function OrderDetail({ order, busy, stores, onBack, onPay, onVerify, onNavigate 
         <div className="pickup"><strong><Icon name="mapPin" size={16} /> Recojo en {storeName}</strong><p>{order.pickup_address || stores.find((store) => store.id === order.store_id)?.direccion || "Consulta la dirección con la bodega."}</p><small>El recojo se muestra como información; no requiere confirmación en esta demo.</small></div>
       </div>
       <aside className="content-card summary-card"><h2>Estado del pedido</h2><div className={`status ${order.state}`}>{orderStatus(order.state)}</div>
+        <div className="order-payment">
+          <span className={`payment-brand ${isMarketplace ? "payment-brand-mp" : "payment-brand-local"}`} aria-hidden="true">{isMarketplace ? "MP" : <Icon name="shield" size={15} />}</span>
+          <span className="payment-copy"><small>Método de pago</small><strong>{paymentLabel}</strong></span>
+        </div>
         {canPay && <><p className="summary-note">Reserva hasta: {order.reservation_until ? new Date(order.reservation_until).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "diez minutos desde la creación"}</p>
-          <button className="button button-primary button-full" type="button" disabled={busy} onClick={onPay}>{busy ? "Espera..." : order.payment_mode === "MERCADOPAGO_TEST" ? "Pagar con Mercado Pago de prueba" : "Simular pago"}</button>
+          <button className="button button-primary button-full" type="button" disabled={busy} onClick={onPay}>{busy ? "Espera..." : isMarketplace ? "Pagar con Mercado Pago de prueba" : "Simular pago"}</button>
           <button className="button button-secondary button-full" type="button" disabled={busy} onClick={onVerify}>Comprobar estado</button></>}
         {!canPay && <button className="button button-secondary button-full" type="button" onClick={() => onNavigate("home")}>Volver a las ofertas</button>}
       </aside>

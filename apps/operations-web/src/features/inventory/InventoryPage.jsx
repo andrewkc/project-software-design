@@ -44,7 +44,8 @@ function matchesFilter(value, filter) {
 
 const emptyFilters = Object.fromEntries(columns.map(([key]) => [key, { operator: key === "stock" || key === "price" ? "greater" : "contains", value: "" }]));
 
-export function InventoryPage({ products, categories = [], expiringProducts, query, onQueryChange, user, employees, jefeProfile, onUpdateProduct, onSetProductActive, onToggleLock }) {
+export function InventoryPage({ products, categories = [], expiringProducts, query, onQueryChange, user, employees, jefeProfile, onUpdateProduct, onSetProductActive, onToggleLock, onRefresh }) {
+  const [refreshing, setRefreshing] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
   const [sort, setSort] = useState({ key: "name", direction: "asc" });
   const [filters, setFilters] = useState(emptyFilters);
@@ -53,6 +54,11 @@ export function InventoryPage({ products, categories = [], expiringProducts, que
   const [page, setPage] = useState(1);
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({});
+  async function handleRefresh() {
+    if (!onRefresh) return;
+    setRefreshing(true);
+    try { await onRefresh(); } finally { setRefreshing(false); }
+  }
   const expiringIds = useMemo(() => new Set(expiringProducts.map((product) => product.id)), [expiringProducts]);
   const categoryOptions = useMemo(() => Array.from(new Set([
     ...baseCategories,
@@ -178,7 +184,7 @@ export function InventoryPage({ products, categories = [], expiringProducts, que
 
   const catalogView = <>
     <button type="button" className="back-to-categories" onClick={closeCatalog}><span aria-hidden="true">←</span> Categorías más comunes</button>
-    <section className="welcome-row inventory-catalog-heading"><div><h1>{copy.inventoryTitle}</h1><p className="welcome-subtitle">{copy.inventorySubtitle}</p></div></section>
+    <section className="welcome-row inventory-catalog-heading"><div><h1>{copy.inventoryTitle}</h1><p className="welcome-subtitle">{copy.inventorySubtitle}</p></div><button className="button button-secondary" type="button" disabled={refreshing} onClick={handleRefresh}>{refreshing ? "Actualizando..." : "Actualizar"}</button></section>
     <section className="content-card inventory-card inventory-catalog" id="product-catalog"><div className="inventory-toolbar"><div>
       <h2>{tableProducts.length} resultados <span className="muted-count">&nbsp;{filteredStockTotal} unidades</span></h2>
       </div><label className="search-field"><Icon name="search" size={17} /><input aria-label="Buscar producto" placeholder="Buscar producto o categor&iacute;a" value={query} onChange={(event) => onQueryChange(event.target.value)} /></label></div><div className="table-toolbar"><

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { OperationsLayout } from "./components/layout/OperationsLayout";
 import { productMethods } from "./data/demoData";
 import { useInventorySummary } from "./hooks/useInventorySummary";
@@ -40,6 +40,29 @@ function App() {
   const { expiringProducts, stockTotal, categoryTotals, stockSeries } = useInventorySummary(products);
   const maxCategoryTotal = Math.max(...categoryTotals.map(([, total]) => total), 1);
 
+  // Sales and stock change in another app. Reload them instead of trusting a
+  // snapshot taken when the manager signed in.
+  const refreshData = useCallback(async () => {
+    if (!getToken()) return;
+    const [productsResult, categoriesResult, salesResult] = await Promise.allSettled([
+      api.listProducts(),
+      api.listCategories(),
+      api.listSales(),
+    ]);
+    if (productsResult.status === "fulfilled") setProducts(productsResult.value.map(toProduct));
+    if (categoriesResult.status === "fulfilled") setCategories(categoriesResult.value);
+    if (salesResult.status === "fulfilled") setSales(salesResult.value);
+    if (user?.role === "jefe") {
+      try {
+        const profiles = (await api.listProfiles()).map(toProfile);
+        setEmployees(profiles.filter((profile) => profile.role === "empleado"));
+        setJefeProfile(profiles.find((profile) => profile.role === "jefe") || null);
+      } catch {
+        // El historial y el inventario ya se actualizaron; se conserva lo demás.
+      }
+    }
+  }, [user?.role]);
+
   useEffect(() => {
     if (screen !== "app" || !getToken()) {
       setLoading(false);
@@ -51,7 +74,7 @@ function App() {
       api.getMe(),
       api.listProducts(),
       api.listCategories().catch(() => []),
-      api.listSales().catch(() => []),
+      api.listSales(),
       api.listAiModels().catch(() => ({ modelos: [], default: "" })),
     ])
       .then(async ([me, productRows, categoryRows, saleRows, modelRows]) => {
@@ -86,6 +109,19 @@ function App() {
       active = false;
     };
   }, [screen]);
+
+  useEffect(() => {
+    if (screen !== "app" || loading || !getToken()) return undefined;
+    const onFocus = () => { refreshData(); };
+    window.addEventListener("focus", onFocus);
+    const timer = window.setInterval(() => {
+      if (!document.hidden) refreshData();
+    }, 15000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(timer);
+    };
+  }, [screen, loading, refreshData]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -299,10 +335,10 @@ function App() {
   return <>
     <OperationsLayout user={user} activeTab={activeTab} expiringCount={expiringProducts.length} onNavigate={setActiveTab} onRegister={() => setActiveTab("register")} onLogout={handleLogout}>
       {activeTab === "home" && <HomePage user={user} products={products} expiringProducts={expiringProducts} stockTotal={stockTotal} stockSeries={stockSeries} categoryTotals={categoryTotals} maxCategoryTotal={maxCategoryTotal} onRegister={() => setActiveTab("register")} onNavigate={setActiveTab} />}
-      {activeTab === "inventory" && <InventoryPage products={products} categories={categories} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} user={user} employees={employees} jefeProfile={jefeProfile} onUpdateProduct={updateProduct} onSetProductActive={setProductActive} onToggleLock={toggleProductLock} onRegister={() => openMethod("text")} />}
+      {activeTab === "inventory" && <InventoryPage products={products} categories={categories} stockTotal={stockTotal} expiringProducts={expiringProducts} query={query} onQueryChange={setQuery} user={user} employees={employees} jefeProfile={jefeProfile} onUpdateProduct={updateProduct} onSetProductActive={setProductActive} onToggleLock={toggleProductLock} onRefresh={refreshData} onRegister={() => openMethod("text")} />}
       {activeTab === "register" && <RegisterPage products={products} user={user} onSubmit={addProduct} draft={draft} categories={categories} onCreateCategory={addCategory} aiModels={aiModels} />}
       {activeTab === "alerts" && <AlertsPage expiringProducts={expiringProducts} />}
-      {activeTab === "sales" && <SalesPage sales={sales} />}
+      {activeTab === "sales" && <SalesPage sales={sales} onRefresh={refreshData} />}
       {activeTab === "insights" && <InsightsPage />}
       {activeTab === "employees" && <EmployeesPage employees={employees} onCreateEmployee={createEmployee} onRevokeEmployee={revokeEmployee} />}
       {activeTab === "recommendations" && <RecommendationsPage user={user} recommendations={recommendations} onRecommendationsChange={setRecommendations} onApplyPrice={patchProduct} onNotify={setToast} />}

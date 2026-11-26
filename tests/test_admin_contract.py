@@ -108,11 +108,11 @@ def test_admin_web_copies_and_uses_official_logos():
         assert f'"{script_name}"' in package, script_name
     assert '"/assets/BodeSmart-Logo.png"' in brand
     assert '"/assets/BodeSmart-Mobile-Logo.png"' in brand
-    assert 'className="art-brand"' in login
+    assert "<Brand light />" in login
     assert "<Brand mobile />" in login
     assert "<Brand mobile />" in layout
     assert ".sidebar-brand .brand-logo" in styles
-    assert ".art-brand .brand-logo" in styles
+    assert ".signup-art .brand-logo" in styles
 
 
 def test_admin_web_login_fits_without_scrolling_on_desktop():
@@ -121,6 +121,22 @@ def test_admin_web_login_fits_without_scrolling_on_desktop():
     assert ".signup-shell { --font-scale: 1.08; height: 100vh; min-height: 0; }" in styles
     assert ".signup-panel { height: 100vh; min-height: 0;" in styles
     assert ".auth-form input { height: 50px;" in styles
+
+
+def test_admin_web_login_has_no_demo_credentials():
+    login = ADMIN_LOGIN.read_text(encoding="utf-8")
+    styles = ADMIN_STYLES.read_text(encoding="utf-8")
+    assert "Demo local:" not in login
+    assert "admin@bodesmart.local" not in login
+    assert "Admin123456" not in login
+    assert "demo-credentials" not in login
+    assert ".demo-credentials" not in styles
+
+
+def test_admin_profile_is_only_reachable_from_the_account_card():
+    layout = ADMIN_LAYOUT.read_text(encoding="utf-8")
+    assert 'label: "Perfil"' not in layout  # entrada redundante eliminada
+    assert 'onClick={() => onNavigate("profile")}' in layout
 
 
 def test_compose_and_env_expose_admin_web():

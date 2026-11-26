@@ -44,7 +44,7 @@ psql -h localhost -U postgres -d postgres -f seed.sql
 - Apellidos del jefe confirmados; los del seed se derivaron del correo.
 - Contraseña hasheada.
 - `creadoPor`, `bloqueado` y `bloqueadoPor` de ADR-001 aún no están en el esquema base; `ensure_schema()` los agrega.
-- Fuera de este corte: movimientos, sesiones, lotes, interfaz de `customer-web` y `admin-web`. El contrato transaccional de compras ya está en el backend y en estas tablas.
+- Fuera del esquema base: tablas de movimientos, sesiones y lotes. Las interfaces de `customer-web` y `admin-web` existen como aplicaciones propias y consumen el contrato transaccional de compras y el catálogo `/admin/*` ya presentes en el backend y en estas tablas.
 
 ## Referencias
 

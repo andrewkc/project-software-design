@@ -27,6 +27,7 @@ const iconPaths = {
   mapPin: <><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></>,
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></>,
   trash: <><path d="M4 7h16M9 7V4h6v3m-9 0 1 14h10l1-14M10 11v6m4-6v6" /></>,
+  menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
 };
 
 export function Icon({ name, size = 20, strokeWidth = 1.8, className = "" }) {

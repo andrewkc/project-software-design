@@ -26,8 +26,8 @@
 - `PATCH /admin/users/{id}` y `DELETE /admin/users/{id}` con autoprotección entre administradores y baja lógica.
 - `GET /admin/stores` para el listado de bodegas.
 - Migraciones idempotentes en `database.ensure_schema()` y cuenta demo sembrada en `seed.sql`, hasheada en el arranque.
-- UI con Panel, Cuentas, Bodegas y Perfil; tabla con búsqueda, rol, orden, drawer de alta/edición, confirmación de desactivación y toast.
-- Misma paleta y escala tipográfica de `operations-web`, sidebar fija y bottom nav móvil.
+- UI con Panel, Cuentas y Bodegas en el menú; el Perfil se abre desde la tarjeta de cuenta inferior (entrada duplicada retirada). Tabla con búsqueda, rol, orden, drawer de alta/edición, confirmación de desactivación y toast.
+- Misma paleta y escala tipográfica de `operations-web`, sidebar fija en escritorio y menú desplegable de hamburguesa en móvil con `Panel`, `Cuentas`, `Bodegas` y `Mi cuenta`; favicon compartido desde `public/favicon.png` (ADR-009).
 
 ### Excluido
 
@@ -61,7 +61,7 @@
 3. En `Cuentas`, el admin busca, filtra por rol y abre el drawer para crear o editar.
 4. Al guardar, el backend valida permisos, correo, bodega y contraseña; la app recarga el listado y muestra confirmación.
 5. Para desactivar, la app pide confirmación y el backend marca `estado = 'inactivo'`; nunca elimina la fila.
-6. En `Perfil`, la cuenta muestra rol `Admin` y la regla de autoprotección; el cierre de sesión descarta el token local.
+6. En `Perfil` (abierto desde la tarjeta de cuenta inferior), la cuenta muestra rol `Admin` y la regla de autoprotección; el cierre de sesión descarta el token local.
 
 ## Alternativas y excepciones
 
@@ -95,8 +95,8 @@
 
 | Criterio | Estado en el prototipo | Validación pendiente |
 |---|---|---|
-| Menú admin propio con Panel, Cuentas, Bodegas y Perfil. | Implementado | Revisión visual en escritorio y móvil. |
-| Paleta, tipografía y escala de `operations-web`. | Implementado | Revisión visual comparada. |
+| Menú admin propio con Panel, Cuentas y Bodegas; Perfil desde la tarjeta inferior y «Mi cuenta» en móvil. | Implementado | Revisión visual en escritorio y móvil. |
+| Paleta, tipografía y escala de `operations-web`; hamburguesa inferior y favicon compartidos (ADR-009). | Implementado | Revisión visual comparada y comprobación de legibilidad móvil. |
 | Perfil muestra rol `Admin` y cierra sesión. | Implementado | Prueba en navegador. |
 | Listado de cuentas de cuatro roles sin contraseñas. | Implementado | Prueba HTTP con token admin. |
 | Admin no edita ni desactiva a otro admin. | Implementado | Prueba HTTP de `403` y revisión de botones deshabilitados. |
@@ -116,7 +116,7 @@
 - FastAPI + psycopg existentes; sin SQLAlchemy ni Alembic.
 - Vite + React con los mismos tokens de diseño que `operations-web`.
 - CORS incluye `5175` en local; producción debe definirse por variable de entorno.
-- ADR-008 registra el cambio de alcance; ADR-001 se conserva para `operations-web`.
+- ADR-008 registra el cambio de alcance; ADR-001 se conserva para `operations-web`; ADR-009 cubre el shell móvil y el favicon compartido con las otras dos apps.
 
 ## Preguntas abiertas
 

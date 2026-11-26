@@ -110,9 +110,14 @@ def test_frontend_exposes_sales_contract():
     assert 'createSale: (payload) => request("/sales"' in api
     app = read("apps/operations-web/src/App.jsx")
     assert 'activeTab === "sales"' in app
+    assert "const refreshData = useCallback" in app  # ventas y stock se recargan
+    assert 'window.addEventListener("focus", onFocus)' in app
+    assert "window.setInterval(() =>" in app
+    assert app.count("onRefresh={refreshData}") == 2  # ventas e inventario
     page = read("apps/operations-web/src/features/sales/SalesPage.jsx")
     assert "Compras pagadas" in page
     assert "Aún no hay compras pagadas" in page
+    assert "Actualizar" in page
 
 
 # ---------------------------------------------------------------------------

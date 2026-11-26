@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 import psycopg
@@ -17,6 +18,17 @@ BASE_CATEGORIAS = (
 # and employees. Replace these values in any real deployment.
 DEMO_ADMIN_CORREO = "admin@bodesmart.local"
 DEMO_ADMIN_PASSWORD = "Admin123456"
+
+# Local storefront data. Everything below is derived from rows already stored
+# in ProductosBodega: no product, price or stock is invented. Only a fixed
+# subset receives a discount; the rest are published at their real price so
+# the store shows products, not just promotions.
+DEMO_STORE_NAME = "Bodega San Martín"
+DEMO_DISCOUNT_PRODUCTS = frozenset({
+    "Arroz extra", "Galletas de soda", "Atún en lata", "Leche chocolatada",
+    "Yogurt de fresa", "Manzana roja", "Fideos largos", "Jugo de naranja",
+})
+DEMO_DISCOUNT_RATE = Decimal("0.8")
 
 
 def ensure_demo_admin(conn):
@@ -101,6 +113,50 @@ def ensure_schema():
                     )
         # Keyed demo purchases: safe to call on every startup.
         ensure_demo_sales(conn)
+        # Storefront offers for the local demo, derived from real inventory.
+        ensure_storefront_offers(conn)
+
+
+def ensure_storefront_offers(conn):
+    """Publish Bodega San Martín products for /customer/offers.
+
+    Only active, unlocked stock with a future expiry and a positive price is
+    used, matching the filter already applied by /customer/offers: no expired
+    product is published. An existing promotion is never overwritten, which
+    makes this safe to repeat on every backend start.
+    """
+    store = conn.execute(
+        "SELECT id FROM Bodega WHERE nombre = %s ORDER BY id LIMIT 1",
+        (DEMO_STORE_NAME,),
+    ).fetchone()
+    if not store:
+        return
+    products = conn.execute(
+        """SELECT pb.id_producto, p.nombre, pb.precio_venta
+           FROM ProductosBodega pb JOIN Producto p ON p.id = pb.id_producto
+           WHERE pb.id_bodega = %s AND pb.estado = 'activo'
+             AND COALESCE(pb.bloqueado, FALSE) = FALSE
+             AND pb.stock > 0 AND pb.precio_venta > 0
+             AND pb.fecha_vencimiento > CURRENT_DATE
+           ORDER BY pb.id_producto""",
+        (store["id"],),
+    ).fetchall()
+    for product in products:
+        if conn.execute(
+            "SELECT 1 FROM Oferta WHERE id_producto = %s AND id_bodega = %s",
+            (product["id_producto"], store["id"]),
+        ).fetchone():
+            continue
+        price = Decimal(str(product["precio_venta"]))
+        discounted = product["nombre"] in DEMO_DISCOUNT_PRODUCTS
+        offer_price = (price * DEMO_DISCOUNT_RATE).quantize(Decimal("0.01")) if discounted else price
+        conn.execute(
+            """INSERT INTO Oferta(id_producto, id_bodega, precio_original,
+                                  precio_oferta, fecha_inicio, fecha_fin, estado)
+               VALUES (%s, %s, %s, %s, now() - interval '1 day',
+                       now() + interval '365 days', 'activo')""",
+            (product["id_producto"], store["id"], price, offer_price),
+        )
 
 
 def profile_response(row: dict, rol: str) -> dict:

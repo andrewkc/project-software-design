@@ -18,14 +18,15 @@
 
 ### Incluido
 
-- Menú `Inicio`, `Bodegas`, `Mi cesta`, `Mis pedidos`, `Perfil`, con barra lateral en escritorio y barra inferior de cinco secciones bajo 720 px; perfil con rol `Cliente`.
-- Catálogo público desde `/customer/stores` y `/customer/offers`; filtros por bodega, precio, vencimiento y búsqueda; disponibilidad = stock − reservas activas.
+- Menú `Inicio`, `Bodegas`, `Mi cesta`, `Mis pedidos`, con barra lateral en escritorio y botón de hamburguesa inferior que despliega esas cuatro secciones más «Mi cuenta» bajo 720 px. `Perfil` no se repite como etiqueta de menú: se abre desde la tarjeta de cuenta con rol `Cliente` y, en móvil, desde el panel desplegable (ADR-007 y ADR-009).
+- Catálogo público desde `/customer/stores` y `/customer/offers`; filtros por bodega, precio, vencimiento y búsqueda; disponibilidad = stock − reservas activas. El catálogo de ofertas del backend se deriva en `ensure_schema()` de los productos activos de Bodega San Martín: todos se publican a su precio real y solo un subconjunto fijo recibe 20% de descuento; las ofertas existentes no se sobrescriben. La tienda no mantiene un catálogo local.
 - Cesta de una sola bodega; alta, cambio de cantidad y eliminación; total calculado desde `current_price`.
 - Registro/login de comprador con token HMAC `rol = 'cliente'`; `/customer/auth/me`.
-- Pedido reservado por diez minutos con UUID idempotente; historial con todos los estados.
-- `Simular pago` (`LOCAL_SIMULATION`) y checkout de Mercado Pago de prueba (`MERCADOPAGO_TEST`) con verificación server-side y webhook firmado.
-- Un único descuento de stock compartido con `POST /sales` mediante `sales_service.decrement_stock_once()` y `approve_reserved_order()`.
+- Pedido reservado por diez minutos con UUID idempotente; el método de pago elegido se persiste en `Pago` y se devuelve en `payment_mode`; historial con todos los estados.
+- Selector de método en la cesta con `GET /customer/payment-methods`: `Simular pago` (`LOCAL_SIMULATION`) y checkout de Mercado Pago de prueba (`MERCADOPAGO_TEST`), disponible solo si el backend tiene credenciales de prueba; verificación server-side y webhook firmado.
+- Un único descuento de stock compartido con `POST /sales` mediante `sales_service.decrement_stock_once()` y `approve_reserved_order()`. No existe compra local: sin backend no hay catálogo ni checkout; la UI muestra el error en lugar de datos inventados.
 - Seed opcional y no destructivo de ofertas y comprador demo.
+- Favicon servido desde `public/favicon.png` y escala móvil legible con piso de `9px × escala`, sin barra inferior fija de secciones (ADR-009).
 
 ### Excluido
 
@@ -34,7 +35,7 @@
 - Creación de jefes/empleados, sobreescritura de contraseñas o precios desde el seed de cliente.
 - `Movimiento`/`DetalleMovimiento`, lotes y responsable de movimiento: RN-03 sigue pendiente.
 - Edición, anulación y reembolso de pedidos.
-- Modo demo como sustituto del checkout: la exploración sintética es local, no persiste pedidos ni descuenta stock; cuando el backend responde, el flujo de pago de prueba es el camino obligatorio.
+- Modo demo o catálogo local como sustituto del checkout: no existe; sin backend la tienda informa el error. El flujo de pago de prueba aprobado por el backend es el único camino de compra.
 
 ## Actores y permisos
 
@@ -59,9 +60,9 @@
 
 1. El comprador se registra o inicia sesión; el token se guarda en `bodesmart_customer_token`.
 2. La app carga bodegas y ofertas. El backend expira reservas vencidas y calcula disponibilidad.
-3. El comprador agrega ofertas a la cesta; la UI valida bodega única, vencimiento y disponible.
-4. `POST /customer/orders` crea la reserva con idempotencia; el pedido aparece en `Mis pedidos` en `pendiente`.
-5. El comprador elige `Simular pago` o el checkout de prueba. El navegador abre la URL del proveedor, pero no decide el resultado.
+3. El comprador agrega ofertas a la cesta, elige método de pago y la UI valida bodega única, vencimiento y disponible.
+4. `POST /customer/orders` crea la reserva con idempotencia y guarda el método; el pedido aparece en `Mis pedidos` en `pendiente`.
+5. El comprador confirma: `Simular pago` aprueba en local o `Pagar con Mercado Pago de prueba` abre la pasarela. El navegador no decide el resultado.
 6. El backend consulta al proveedor, valida importe, referencia, moneda, cuenta y firma, y llama a la aprobación compartida.
 7. Las vistas `Mis pedidos` y `Ventas` leen estados distintos por diseño: todas las del comprador, solo `pagado` para la bodega.
 
@@ -75,6 +76,7 @@
 | Verificación server-side del pago de prueba | `checkout`, `verify_payment`, `payment_webhook` | `test_external_payment_is_verified_server_side`, `test_signed_webhook_reconciles_payment_once` |
 | Historial visible del comprador | `GET /customer/orders`, `OrdersPage.jsx` | `test_history_shows_pending_and_paid_orders`, `tests/test_customer_contract.py` |
 | Paridad visual con `operations-web` | `apps/customer-web/src/styles.css`, `CustomerLayout.jsx` | `test_customer_ui_reuses_operations_visual_tokens` |
+| Shell móvil legible y favicon compartido | `index.html`, `CustomerLayout.jsx`, `styles.css` | `tests/test_web_shell_contract.py` |
 
 ## Preguntas abiertas
 

@@ -28,7 +28,7 @@
 - `database.ensure_schema()` agrega de forma idempotente `Jefe.estado`, `Admin.estado`, `Admin.fecha_creacion`, `Admin.ultimo_acceso` y el índice único de correo insensible a mayúsculas; `email_exists()` pasa a considerar los cuatro roles para evitar correos duplicados entre plataformas.
 - `Jefe.estado` se respeta en `/auth/login` y en `bodega_id_for()`: un jefe desactivado ya no puede iniciar sesión ni resolver su bodega.
 - Las filas creadas por un empleado desactivado desde admin-web se bloquean igual que en la revocación hecha por el jefe, manteniendo coherencia con ADR-001.
-- El frontend admin usa los tokens de `operations-web`: DM Sans/Manrope, `--font-scale: 1.4`, paleta `#397a55` / `#f7f8f3` / `#252c26`, sidebar, nav móvil, tarjetas, tabla, drawer, confirmación y toast.
+- El frontend admin usa los tokens de `operations-web`: DM Sans/Manrope, `--font-scale: 1.4` global (`1.08` solo en el acceso de escritorio), paleta `#397a55` / `#f7f8f3` / `#252c26`, sidebar, tarjetas, tabla, drawer, confirmación y toast. La nav móvil pasó a ser un menú desplegable de hamburguesa con ADR-009.
 - La tabla `Admin` ya existía en `database.sql`, pero no tenía código que la usara; ahora tiene un Propósito confirmado en el corte admin.
 
 ## Alternativas consideradas

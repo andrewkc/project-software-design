@@ -14,6 +14,8 @@ const iconPaths = {
   lock: <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3" /></>,
   arrow: <><path d="M5 12h14m-6-6 6 6-6 6" /></>,
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5m0-8h.01" /></>,
+  menu: <><path d="M4 7h16M4 12h16M4 17h16" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></>,
 };
 
 export function Icon({ name, size = 20, className = "" }) {

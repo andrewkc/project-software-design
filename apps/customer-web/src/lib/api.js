@@ -25,6 +25,7 @@ const post = (path, data) => request(path, { method: "POST", body: JSON.stringif
 
 export const api = {
   stores: () => request("/stores"),
+  paymentMethods: () => request("/payment-methods"),
   offers: (storeId) => request("/offers" + (storeId ? `?store_id=${storeId}` : "")),
   register: (data) => post("/auth/register", data),
   login: (data) => post("/auth/login", data),

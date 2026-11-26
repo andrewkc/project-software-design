@@ -6,7 +6,7 @@
 
 ## Contexto
 
-`operations-web` no tenía ninguna vista de ventas. El esquema local ya traía `Cliente`, `Oferta`, `Compra`, `DetalleCompra`, `Carrito`, `DetalleCarrito` y `Pago`, pero ningún endpoint ni interfaz los usaba; `customer-web` no existe en este repositorio. En el checkout revisado de `C:\projects-4\project-software-design`, el backend expone `/customer/*`, crea pedidos `pendiente` con reserva de diez minutos y solo descuenta `ProductosBodega.stock` en `_approve`, cuando el pago se aprueba y la compra pasa a `pagado`. Los estados `pendiente`, `expirado`, `rechazado` y `pago_en_revision` no toman existencias.
+`operations-web` no tenía ninguna vista de ventas. El esquema local ya traía `Cliente`, `Oferta`, `Compra`, `DetalleCompra`, `Carrito`, `DetalleCarrito` y `Pago`, pero ningún endpoint ni interfaz los usaba. Al momento de esta decisión `customer-web` no existía en este repositorio; posteriormente se incorporó con ADR-007 y consume `/customer/*`. En el checkout revisado de `C:\projects-4\project-software-design`, el backend expone `/customer/*`, crea pedidos `pendiente` con reserva de diez minutos y solo descuenta `ProductosBodega.stock` en `_approve`, cuando el pago se aprueba y la compra pasa a `pagado`. Los estados `pendiente`, `expirado`, `rechazado` y `pago_en_revision` no toman existencias.
 
 El usuario necesita que el historial sea coherente: si muestra «10 kg de mango verde vendidos», antes debió haber al menos 10 kg y el saldo ya debió actualizarse. Por eso no basta con leer filas sueltas: la lectura y la escritura deben compartir la misma definición de venta.
 

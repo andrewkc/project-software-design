@@ -3,10 +3,11 @@ import { Icon } from "../../components/Icon";
 import { PageDate } from "../../components/layout/PageDate";
 import { money } from "../../lib/format";
 
-export function CartPage({ cart, stores, onChangeQuantity, onRemove, onCheckout, onNavigate, user, busy }) {
+export function CartPage({ cart, stores, onChangeQuantity, onRemove, onCheckout, onNavigate, user, busy, paymentMethods = [], paymentMethod = "LOCAL_SIMULATION", onPaymentMethodChange }) {
   const count = cart.reduce((sum, line) => sum + line.quantity, 0);
   const total = cart.reduce((sum, line) => sum + Number(line.current_price) * line.quantity, 0);
   const storeName = stores.find((store) => store.id === cart[0]?.store_id)?.nombre || cart[0]?.store_name || "Bodega";
+  const selected = paymentMethods.find((method) => method.id === paymentMethod);
 
   return <div className="page-content inner-page">
     <PageDate />
@@ -21,7 +22,19 @@ export function CartPage({ cart, stores, onChangeQuantity, onRemove, onCheckout,
           <button className="row-action" type="button" onClick={() => onRemove(line.id)} aria-label={`Quitar ${line.product_name} de la cesta`}><Icon name="trash" size={16} /></button>
         </article>)}</div>
       </div>
-      <aside className="content-card summary-card"><h2>Resumen del pedido</h2><div className="summary-row"><span>Bodega</span><strong>{storeName}</strong></div><div className="summary-row"><span>Productos</span><strong>{count}</strong></div><div className="summary-row summary-total"><span>Total</span><strong>{money(total)}</strong></div><p className="summary-note"><Icon name="info" size={14} /> El recojo es informativo. El pedido se confirma al aprobar el pago de prueba.</p>
+      <aside className="content-card summary-card"><h2>Resumen del pedido</h2><div className="summary-row"><span>Bodega</span><strong>{storeName}</strong></div><div className="summary-row"><span>Productos</span><strong>{count}</strong></div><div className="summary-row summary-total"><span>Total</span><strong>{money(total)}</strong></div>
+        <h3 className="payment-heading">Método de pago</h3>
+        <div className="payment-options">
+          {paymentMethods.map((method) => {
+            const active = method.id === paymentMethod;
+            return <button key={method.id} type="button" className={`payment-option${active ? " payment-option-active" : ""}`} disabled={!method.disponible} onClick={() => onPaymentMethodChange?.(method.id)}>
+              <span className="payment-radio" aria-hidden="true">{active && <Icon name="check" size={12} />}</span>
+              <span className={`payment-brand ${method.id === "MERCADOPAGO_TEST" ? "payment-brand-mp" : "payment-brand-local"}`} aria-hidden="true">{method.id === "MERCADOPAGO_TEST" ? "MP" : <Icon name="shield" size={15} />}</span>
+              <span className="payment-copy"><strong>{method.label}</strong><small>{method.disponible ? method.detalle : "Configura MERCADOPAGO_ACCESS_TOKEN en el backend para habilitarlo."}</small></span>
+            </button>;
+          })}
+        </div>
+        <p className="summary-note"><Icon name="info" size={14} /> El recojo es informativo. El pedido se confirma solo cuando el pago sea aprobado{selected ? ` con ${selected.label}` : ""}.</p>
         <button className="button button-primary button-full" type="button" disabled={busy} onClick={onCheckout}>{busy ? "Preparando..." : user ? "Continuar al pedido" : "Ingresar para comprar"}</button>
       </aside>
     </section> : <div className="empty-state"><span>🛒</span><strong>Tu cesta está vacía</strong><p>Explora las ofertas para comenzar.</p><button className="button button-primary" type="button" onClick={() => onNavigate("home")}>Ver ofertas</button></div>}

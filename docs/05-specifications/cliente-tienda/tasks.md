@@ -12,6 +12,7 @@
 | 8 | Pruebas: `tests/test_customer_contract.py`, `tests/test_customer_flow.py`, cobertura de endpoints en `test_endpoint_usage.py` | Escritas; ejecución bloqueada por shell |
 | 9 | Documentación: `scope.md`, ADR-007, README raíz/backend/customer-web y esta spec | Implementado |
 | 10 | Ejecutar `npm install`, `npm run build`, `pytest` y probar checkout en navegador | Bloqueado: `pwsh` no inicia (`OS Error -1073283067`) |
+| 11 | Shell móvil ADR-009: favicon, hamburguesa desplegable, piso tipográfico y `tests/test_web_shell_contract.py` | Implementado como propuesta; validación visual y build pendientes |
 
 ## Cómo validar cuando el shell responda
 

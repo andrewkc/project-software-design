@@ -32,8 +32,28 @@ export function OperationsLayout({ user, activeTab, expiringCount, onNavigate, o
   </div></LayoutContext.Provider>;
 }
 
-function MobileNav({ user, activeTab, expiringCount, onNavigate, onRegister, onLogout }) {
+function MobileNav({ user, activeTab, expiringCount, onNavigate, onRegister }) {
+  const [open, setOpen] = React.useState(false);
   const jefe = isJefe(user);
   const items = mobileNavigation.filter((item) => (!item.jefeOnly || jefe) && (!item.empleadoOnly || !jefe));
-  return <nav className="mobile-nav" aria-label="Navegaci&oacute;n m&oacute;vil" data-count={items.length}>{items.map((item) => <button key={item.id} type="button" className={activeTab === item.id ? "active" : ""} onClick={() => { if (item.id === "register") return onRegister(); onNavigate(item.id); }}><Icon name={item.icon} size={19} /><span>{item.label}</span>{item.id === "alerts" && expiringCount > 0 && <i />}</button>)}</nav>;
+  const current = items.find((item) => item.id === activeTab);
+  const choose = (item) => {
+    setOpen(false);
+    if (item.id === "register") return onRegister();
+    onNavigate(item.id);
+  };
+  return <div className="mobile-nav" data-count={items.length}>
+    <button type="button" className="mobile-menu-trigger" aria-haspopup="menu" aria-expanded={open} aria-controls="operations-mobile-sections" aria-label={open ? "Cerrar menú de secciones" : "Abrir menú de secciones"} onClick={() => setOpen((value) => !value)}>
+      <Icon name={open ? "close" : "menu"} size={21} />
+      <span>Menú</span>
+      {current && <small>{current.label}</small>}
+    </button>
+    {open && <div className="mobile-menu-panel" id="operations-mobile-sections" role="menu" aria-label="Secciones de operaciones">
+      <p className="mobile-menu-caption">Secciones</p>
+      {items.map((item) => <button key={item.id} type="button" role="menuitem" className={activeTab === item.id ? "active" : ""} onClick={() => choose(item)}>
+        <Icon name={item.icon} size={19} /><span>{item.label}</span>
+        {item.id === "alerts" && expiringCount > 0 && <span className="nav-count">{expiringCount}</span>}
+      </button>)}
+    </div>}
+  </div>;
 }

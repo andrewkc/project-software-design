@@ -41,3 +41,11 @@ El historial expone solo `Compra.estado = 'pagado'`. `POST /sales` es el contrat
 | CU-05, CU-07 | RF-31, RF-32, RF-33 | RN-02, RN-04, RN-05, RN-06, RN-15, RN-16 | ADR-007 | `apps/customer-web/src/**`; `apps/backend/routers/customer.py`; `apps/backend/sales_service.py`; `apps/backend/config.py`; `apps/backend/main.py`; `apps/backend/seed_customer_demo.py` | `tests/test_customer_contract.py`; `tests/test_customer_flow.py`; `tests/test_endpoint_usage.py` |
 
 El comprador ve todos sus estados, mientras `Ventas` sigue filtrando solo `pagado`. El pago de prueba nunca es decidido por el navegador y el descuento de stock pasa por la misma función que `POST /sales`.
+
+## Trazabilidad del shell móvil compartido (ADR-009)
+
+| Caso | Requisitos | Reglas | Decisión | Código | Pruebas |
+|---|---|---|---|---|---|
+| Sin caso nuevo (interfaz) | NFR de usabilidad móvil, sin RF numerado | Sin RN nueva | ADR-009 | `apps/operations-web/index.html`; `apps/customer-web/index.html`; `apps/admin-web/index.html`; los tres `src/components/layout/*Layout.jsx`; los tres `src/styles.css` | `tests/test_web_shell_contract.py`; `tests/test_customer_contract.py`; `tests/test_admin_contract.py`; `tests/test_sales.py` |
+
+La decisión no crea requisitos funcionales ni reglas de negocio: sustituye la navegación inferior fija por un panel de hamburguesa, comparte favicon y fija un piso tipográfico móvil. `Ventas` sigue visible para jefe y empleado y `Perfil` no se duplica como etiqueta de menú.

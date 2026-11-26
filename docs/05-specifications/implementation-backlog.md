@@ -2,6 +2,8 @@
 
 **Estado:** Propuesto; requiere revisión y aprobación del equipo.
 
+**Nota histórica:** la sección «Observado en el repositorio» describe el corte inicial anterior a `operations-web`, `admin-web`, `customer-web` y al backend FastAPI actual. No debe leerse como estado vigente; el inventario actual está en el [README raíz](../../README.md) y en [docs/06-quality](../06-quality/README.md).
+
 **Propósito:** convertir el modelo SDD existente en tareas pequeñas, verificables y asignables a tres developers, manteniendo trazabilidad y reduciendo conflictos de archivos.
 
 ## 1. Lectura actual del proyecto

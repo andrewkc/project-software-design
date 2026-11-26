@@ -1,10 +1,10 @@
 import React from "react";
 import { Brand } from "../../components/Brand";
 
-export function AuthScreen({ mode, busy = false, onModeChange, onLogin, onSignup, onDemo }) {
+export function AuthScreen({ mode, busy = false, onModeChange, onLogin, onSignup }) {
   return <main className="signup-shell">
     <section className="signup-art" aria-label="Presentación de BodeSmart">
-      <div className="art-brand"><Brand className="brand-light" /></div>
+      <Brand className="brand-light" />
       <div className="art-copy"><span className="eyebrow">OFERTAS CERCA DE TI</span><h1>Compra mejor.<br />Aprovecha más.</h1><p>Descubre productos de las bodegas de tu barrio, compara precios y elige lo que se consume antes de que venza.</p></div>
       <div className="art-note"><span className="note-icon">🛍️</span><span><strong>Tu cesta, tus pedidos y tus ofertas en un solo lugar.</strong></span></div>
       <span className="art-orb orb-one" /><span className="art-orb orb-two" />
@@ -12,8 +12,6 @@ export function AuthScreen({ mode, busy = false, onModeChange, onLogin, onSignup
     <section className="signup-panel"><div className="signup-form-wrap">
       <div className="mobile-brand"><Brand mobile /></div>
       {mode === "signup" ? <SignupForm busy={busy} onSubmit={onSignup} onLogin={() => onModeChange("login")} /> : <LoginForm busy={busy} onSubmit={onLogin} onSignup={() => onModeChange("signup")} />}
-      {onDemo && <button className="demo-explore" type="button" onClick={onDemo}>Explorar la tienda con datos de demostración</button>}
-      <small className="demo-note">Demo académica · Pagos de prueba</small>
     </div></section>
   </main>;
 }

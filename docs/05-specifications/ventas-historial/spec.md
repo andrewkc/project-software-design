@@ -18,7 +18,7 @@
 
 ### Incluido
 
-- Navegación `Ventas` para jefe y empleado, en escritorio y móvil, sin distinción de roles dentro de la sección.
+- Navegación `Ventas` para jefe y empleado, en escritorio y móvil, sin distinción de roles dentro de la sección; en móvil se alcanza desde el menú desplegable de hamburguesa, no desde una barra inferior fija (ADR-009).
 - `GET /sales`: compras `pagado` de la bodega del token, ordenadas por fecha de pago, con cliente, fecha, total, método de pago local y líneas con producto, cantidad, precio unitario y subtotal congelados.
 - `POST /sales`: alta transaccional de una compra pagada de un `Cliente` activo, con validación de cantidades positivas, producto activo, vencimiento futuro o nulo, precio positivo, stock suficiente, idempotencia opcional y descuento condicional de stock.
 - Esquema y migraciones idempotentes: columnas de `Oferta`, `Compra`, `DetalleCompra` y `Pago` del contrato revisado, más `ReservaCompra` con índice parcial.
@@ -27,8 +27,8 @@
 
 ### Excluido
 
-- Interfaz de comprador, carrito, autenticación de `cliente` y pasarela de pago real en este repositorio. `customer-web` sigue sin implementar aquí.
-- Cobros externos, Mercado Pago, facturación, entregas, contabilidad, proveedores ni sugerencias de IA de compra.
+- Interfaz de comprador, carrito y autenticación de `cliente` dentro de esta funcionalidad: viven en la app `customer-web` (ADR-007) y no forman parte de la vista `Ventas`.
+- Cobros reales, facturación, entregas, contabilidad, proveedores ni sugerencias de IA de compra. Mercado Pago se usa solo en modo de prueba (ADR-007).
 - Tablas `Movimiento` y `DetalleMovimiento`, lotes, responsable de movimiento y vencimientos por lote. RN-03 y EN-04/EN-05/EN-06 siguen pendientes de integración.
 - Pedidos `pendiente`, `expirado`, `rechazado` o `pago_en_revision` en el historial: no descontaron stock, por lo que no son ventas.
 - Datos reales de clientes, correos o teléfonos en la vista. El demo usa `cliente.demo@bodesmart.local`.

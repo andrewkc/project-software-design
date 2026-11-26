@@ -11,6 +11,6 @@ La copia la hace `npm run copy-logos`, que npm ejecuta automáticamente antes de
 carpeta de `operations-web` no está disponible (por ejemplo, en una imagen
 Docker cuyo contexto es solo `customer-web`), el script no falla y conserva los
 archivos ya presentes aquí. `src/components/Brand.jsx` los sirve desde
-`/assets/...`; en el panel de acceso el logo completo se presenta sobre una
-pastilla crema de la paleta BodeSmart para conservar contraste. No editar estos
-binarios a mano: se regeneran desde la fuente oficial.
+`/assets/...`; en el panel de acceso el logo completo queda directo sobre el
+verde, sin recuadro. No editar estos binarios a mano: se regeneran desde la
+fuente oficial.

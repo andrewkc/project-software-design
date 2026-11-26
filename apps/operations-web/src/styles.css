@@ -664,10 +664,6 @@ tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
   .insight-strip strong { font-size: calc(9px * var(--font-scale)); }
   .insight-strip small { font-size: calc(8px * var(--font-scale)); line-height: 1.5; }
   .insight-strip button { gap: 4px; font-size: calc(8px * var(--font-scale)); }
-  .mobile-nav { position: fixed; z-index: 8; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(5, 1fr); min-height: 62px; padding: 6px 5px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid #e8ece5; background: #fff; box-shadow: 0 -5px 18px #25321e09; }
-  .mobile-nav button { display: flex; position: relative; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; color: #929990; background: transparent; font-size: calc(7px * var(--font-scale)); cursor: pointer; }
-  .mobile-nav button.active { color: #397a55; font-weight: 700; }
-  .mobile-nav button i { top: 3px; right: calc(50% - 13px); }
   .inner-page { padding-top: 24px; }
   .inner-page .welcome-row { align-items: flex-start; }
   .inner-page .welcome-row h1 { font-size: calc(23px * var(--font-scale)); }
@@ -828,4 +824,24 @@ tr:hover .row-actions, tr:focus-within .row-actions { opacity: 1; }
   .sales-summary-card { gap: 3px; padding: 14px; }
   .sales-card { padding: 15px 12px; }
   .sale-card-head { flex-direction: column; gap: 6px; }
+}
+
+/* Menú móvil: hamburguesa inferior con panel desplegable y tipografía legible. */
+@media (max-width: 720px) {
+  body { --font-scale: 1.55; }
+  .signup-shell { --font-scale: 1.4; }
+  .main-area { padding-bottom: 96px; }
+
+  .mobile-nav { position: fixed; z-index: 20; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); display: block; }
+  .mobile-menu-trigger { display: flex; align-items: center; gap: 9px; min-height: 50px; padding: 0 17px; border: 1px solid var(--line); border-radius: 25px; color: var(--green); background: #fff; box-shadow: 0 6px 22px #25321e2b; font-size: calc(12px * var(--font-scale)); font-weight: 700; cursor: pointer; }
+  .mobile-menu-trigger small { max-width: 110px; overflow: hidden; color: #8a938a; font-size: calc(10px * var(--font-scale)); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-menu-panel { position: absolute; right: 0; bottom: calc(100% + 10px); width: min(282px, calc(100vw - 28px)); max-height: min(62vh, 430px); padding: 8px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: 0 -8px 30px #25321e2e; }
+  .mobile-menu-caption { margin: 0; padding: 6px 10px 8px; color: #929990; font-size: calc(10px * var(--font-scale)); font-weight: 700; letter-spacing: .7px; text-transform: uppercase; }
+  .mobile-menu-panel button { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 46px; padding: 9px 11px; border: 0; border-radius: 9px; color: #485c4b; background: transparent; font-size: calc(11px * var(--font-scale)); font-weight: 600; text-align: left; cursor: pointer; }
+  .mobile-menu-panel button.active { color: var(--green); background: var(--green-soft); }
+  .mobile-menu-panel .nav-count { margin-left: auto; }
+  .column-filter-menu { bottom: 82px; }
+  .toast-message { bottom: 82px; }
+
+  .chart-period, .chart-labels, .section-kicker, .method-bottom, .status-pill, .suggestion-label, .suggestion-price, .suggestion-footnote, .register-subnav small, .ai-model-picker small, th, .stock-indicator, .row-flag, .inventory-pagination button, .insight-card-top small, .insight-takeaway strong, .opportunity-label, .input-with-suffix select, .stat-label, .stat-hint, .summary-card-label, .home-summary-card button, .method-subtitle, .prototype-disclaimer, .product-name small, .insight-strip small, .insight-strip button, .register-subnav strong, .prototype-note, .icon-picker-caption { font-size: calc(9px * var(--font-scale)); }
 }

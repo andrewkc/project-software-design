@@ -8,7 +8,6 @@ import { CartPage } from "./features/cart/CartPage";
 import { OrdersPage } from "./features/orders/OrdersPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
 import { api, getToken, saveToken } from "./lib/api";
-import { demoOffers, demoStores } from "./data/demoData";
 import { daysUntilExpiry } from "./lib/catalog";
 import { fullName, money, shortName } from "./lib/format";
 
@@ -23,6 +22,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [stores, setStores] = useState([]);
   const [offers, setOffers] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([
+    { id: "LOCAL_SIMULATION", label: "Pago local de prueba", detalle: "Aprobación inmediata. La venta y el stock se registran al confirmar.", disponible: true },
+    { id: "MERCADOPAGO_TEST", label: "Mercado Pago de prueba", disponible: false },
+  ]);
+  const [paymentMethod, setPaymentMethod] = useState("LOCAL_SIMULATION");
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [activeOrder, setActiveOrder] = useState(null);
@@ -32,7 +36,7 @@ export default function App() {
   const [filters, setFilters] = useState(emptyFilters);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [demoMode, setDemoMode] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [toast, setToast] = useState("");
   const [notice, setNotice] = useState(null);
   const pendingKeyRef = useRef(null);
@@ -43,24 +47,34 @@ export default function App() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [storesResult, offersResult] = await Promise.allSettled([api.stores(), api.offers()]);
+      const [storesResult, offersResult, methodsResult] = await Promise.allSettled([
+        api.stores(), api.offers(), api.paymentMethods(),
+      ]);
       if (!active) return;
       const offline = storesResult.status === "rejected" || offersResult.status === "rejected";
-      setDemoMode(offline);
-      setStores(storesResult.status === "fulfilled" ? storesResult.value : demoStores);
-      setOffers(offersResult.status === "fulfilled" ? offersResult.value : demoOffers);
+      if (offline) {
+        setLoadError("No se pudo conectar con el backend. No hay catálogo local: vuelve a intentar cuando esté disponible.");
+      } else {
+        setStores(storesResult.value);
+        setOffers(offersResult.value);
+      }
+      if (methodsResult.status === "fulfilled" && Array.isArray(methodsResult.value?.metodos)) {
+        const methods = methodsResult.value.metodos;
+        setPaymentMethods(methods);
+        if (!methods.some((method) => method.id === paymentMethod && method.disponible)) {
+          setPaymentMethod(methods.find((method) => method.disponible)?.id || "LOCAL_SIMULATION");
+        }
+      }
       if (getToken()) {
         const [meResult, ordersResult] = await Promise.allSettled([api.me(), api.orders()]);
         if (!active) return;
         if (meResult.status === "fulfilled") {
-          setUser(profileFrom(meResult.value, { nombres: "Cliente", apellidos: "Demo" }));
-          setScreen("app");
-        } else if (offline) {
-          setUser({ nombres: "Cliente", apellidos: "Demo", correo: "cliente.demo@bodesmart.local" });
+          setUser(profileFrom(meResult.value));
           setScreen("app");
         } else {
           saveToken(null);
           setScreen("auth");
+          setLoadError("Tu sesión no se pudo verificar. Inicia sesión de nuevo.");
         }
         if (ordersResult.status === "fulfilled") setOrders(ordersResult.value);
       }
@@ -85,9 +99,7 @@ export default function App() {
     if (screen !== "app" || activeOrder?.state !== "pendiente" || !activeOrder?.payment_started) return undefined;
     const timer = window.setInterval(async () => {
       try {
-        const updated = demoMode
-          ? activeOrder
-          : await api.verifyPayment(activeOrder.id);
+        const updated = await api.verifyPayment(activeOrder.id);
         setActiveOrder(updated);
         if (updated.state === "pagado") {
           setCart([]);
@@ -99,10 +111,9 @@ export default function App() {
       }
     }, 5000);
     return () => window.clearInterval(timer);
-  }, [screen, activeOrder?.id, activeOrder?.state, activeOrder?.payment_started, demoMode]);
+  }, [screen, activeOrder?.id, activeOrder?.state, activeOrder?.payment_started]);
 
   async function reloadOrders() {
-    if (demoMode) return;
     try {
       setOrders(await api.orders());
     } catch {
@@ -127,14 +138,6 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function enterDemo() {
-    setUser({ nombres: "Cliente", apellidos: "Demo", correo: "cliente.demo@bodesmart.local" });
-    setDemoMode(true);
-    setScreen("app");
-    setActiveTab("home");
-    setToast("Estás explorando la tienda con datos de demostración.");
   }
 
   function logout() {
@@ -189,30 +192,15 @@ export default function App() {
     setCart((previous) => previous.filter((line) => line.id !== id));
   }
 
-  function demoOrder() {
-    const store = stores.find((item) => item.id === cartStoreId);
-    return {
-      id: Math.floor(Date.now() / 1000),
-      state: "pendiente",
-      payment_mode: "LOCAL_SIMULATION",
-      payment_started: false,
-      total: cart.reduce((sum, line) => sum + Number(line.current_price) * line.quantity, 0),
-      store_id: cartStoreId,
-      store_name: store?.nombre || cart[0]?.store_name || "Bodega",
-      pickup_address: store?.direccion || "",
-      reservation_until: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-      lines: cart.map((line) => ({ offer_id: line.id, product_name: line.product_name, icon: line.icon, quantity: line.quantity, unit_price: line.current_price, amount: Number(line.current_price) * line.quantity })),
-    };
-  }
-
   async function placeOrder() {
     if (!cart.length) { setToast("Agrega un producto antes de continuar."); return; }
-    if (!user) { setAuthMode("login"); setScreen("auth"); setToast("Ingresa o explora en modo demostración para continuar."); return; }
+    if (!user) { setAuthMode("login"); setScreen("auth"); setToast("Ingresa para continuar con tu compra."); return; }
     setBusy(true);
     const key = pendingKeyRef.current || crypto.randomUUID();
     try {
-      const order = demoMode ? demoOrder() : await api.createOrder({
+      const order = await api.createOrder({
         idempotency_key: key,
+        metodo_pago: paymentMethod,
         lines: cart.map((line) => ({ offer_id: line.id, quantity: line.quantity })),
       });
       pendingKeyRef.current = key;
@@ -220,7 +208,7 @@ export default function App() {
       setActiveTab("orders");
       setNotice(null);
       await reloadOrders();
-      setToast(demoMode ? "Pedido de demostración creado. Puedes simular el pago." : "Pedido creado. Completa el pago para confirmarlo.");
+      setToast("Pedido creado. Completa el pago para confirmarlo.");
     } catch (error) {
       setToast(error.message || "No se pudo crear el pedido.");
     } finally {
@@ -232,23 +220,15 @@ export default function App() {
     if (!activeOrder) return;
     setBusy(true);
     try {
-      if (demoMode) {
-        setActiveOrder({ ...activeOrder, state: "pagado", payment_started: true });
-        setCart([]);
-        pendingKeyRef.current = null;
-        setOrders((current) => [{ ...activeOrder, state: "pagado", payment_started: true }, ...current]);
-        setToast("Pago de demostración aprobado. ¡Compra confirmada!");
-        return;
-      }
       if (activeOrder.payment_mode === "MERCADOPAGO_TEST") {
-        const paymentTab = window.open("about:blank", "bodesmart-mercadopago");
-        if (paymentTab) paymentTab.opener = null;
         const result = await api.checkout(activeOrder.id);
         const updated = await api.order(activeOrder.id);
         setActiveOrder(updated);
         await reloadOrders();
-        if (paymentTab && result?.checkout_url) paymentTab.location.href = result.checkout_url;
-        else if (result?.checkout_url) window.location.assign(result.checkout_url);
+        if (!result?.checkout_url) throw new Error("Mercado Pago no devolvió una URL de pago.");
+        const paymentTab = window.open(result.checkout_url, "bodesmart-mercadopago");
+        if (paymentTab) paymentTab.opener = null;
+        else window.location.assign(result.checkout_url);
         setToast("Completa el pago de prueba en Mercado Pago y vuelve aquí. Comprobaremos el resultado automáticamente.");
       } else {
         const updated = await api.simulatePayment(activeOrder.id);
@@ -268,12 +248,17 @@ export default function App() {
   async function refreshOrder() {
     if (!activeOrder) return;
     try {
-      const updated = demoMode ? activeOrder : activeOrder.payment_started ? await api.verifyPayment(activeOrder.id) : await api.order(activeOrder.id);
+      const updated = activeOrder.payment_started ? await api.verifyPayment(activeOrder.id) : await api.order(activeOrder.id);
       setActiveOrder(updated);
       if (updated.state === "pagado") { setCart([]); pendingKeyRef.current = null; await reloadOrders(); }
     } catch (error) {
       setToast(error.message || "No se pudo comprobar el estado del pedido.");
     }
+  }
+
+  function changePaymentMethod(id) {
+    setPaymentMethod(id);
+    pendingKeyRef.current = null;
   }
 
   function navigate(tab) {
@@ -282,10 +267,11 @@ export default function App() {
     setActiveTab(tab);
   }
 
-  const profile = user || { nombres: "Cliente", apellidos: "Demo" };
+  const profile = user || { nombres: "Cliente", apellidos: "" };
 
   if (screen === "auth") return <>
-    <AuthScreen mode={authMode} busy={busy} onModeChange={setAuthMode} onLogin={authenticate} onSignup={authenticate} onDemo={enterDemo} />
+    <AuthScreen mode={authMode} busy={busy} onModeChange={setAuthMode} onLogin={authenticate} onSignup={authenticate} />
+    {loadError && <div className="auth-error" role="alert">{loadError}</div>}
     {toast && <Toast text={toast} />}
   </>;
 
@@ -293,10 +279,10 @@ export default function App() {
 
   return <>
     <CustomerLayout user={profile} activeTab={activeTab} cartCount={cartCount} onNavigate={navigate}>
-      {demoMode && <div className="demo-banner" role="status"><Icon name="info" size={16} /><span>Modo demostración: ves datos de ejemplo; los pedidos no se guardan y no se descuenta stock real.</span></div>}
+      {loadError && <div className="auth-error" role="alert">{loadError}</div>}
       {activeTab === "home" && <HomePage user={profile} stores={stores} offers={offers} filters={filters} onFiltersChange={setFilters} onClearFilters={() => setFilters(emptyFilters)} onAdd={addToCart} onNavigate={navigate} onOpenStore={(id) => { setSelectedStoreId(id); setActiveTab("stores"); }} onCart={() => navigate("cart")} cartCount={cartCount} />}
       {activeTab === "stores" && <StoresPage stores={stores} offers={offers} selectedStoreId={selectedStoreId} onOpenStore={setSelectedStoreId} onBack={() => setSelectedStoreId(null)} onAdd={addToCart} onCart={() => navigate("cart")} cartCount={cartCount} />}
-      {activeTab === "cart" && <CartPage cart={cart} stores={stores} onChangeQuantity={changeQuantity} onRemove={removeFromCart} onCheckout={placeOrder} onNavigate={navigate} user={user} busy={busy} />}
+      {activeTab === "cart" && <CartPage cart={cart} stores={stores} onChangeQuantity={changeQuantity} onRemove={removeFromCart} onCheckout={placeOrder} onNavigate={navigate} user={user} busy={busy} paymentMethods={paymentMethods} paymentMethod={paymentMethod} onPaymentMethodChange={changePaymentMethod} />}
       {activeTab === "orders" && <OrdersPage orders={orders} activeOrder={activeOrder} busy={busy} stores={stores} onSelectOrder={setActiveOrder} onBack={() => setActiveOrder(null)} onPay={pay} onVerify={refreshOrder} onNavigate={navigate} />}
       {activeTab === "profile" && <ProfilePage user={profile} orderCount={orders.filter((order) => order.state === "pagado").length} onLogout={logout} onNavigate={navigate} />}
     </CustomerLayout>

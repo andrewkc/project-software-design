@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Icon } from "../../components/Icon";
 import { PageDate } from "../../components/layout/PageDate";
 
@@ -22,18 +22,27 @@ const paymentLabel = (method) => ({
   MERCADOPAGO_TEST: "Mercado Pago de prueba",
 }[method] || method || "Registro interno");
 
-export function SalesPage({ sales }) {
+export function SalesPage({ sales, onRefresh }) {
+  const [refreshing, setRefreshing] = useState(false);
   const total = sales.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0);
   const units = sales.reduce(
     (sum, sale) => sum + sale.lineas.reduce((inner, line) => inner + (Number(line.cantidad) || 0), 0),
     0,
   );
 
+  async function handleRefresh() {
+    if (!onRefresh) return;
+    setRefreshing(true);
+    try { await onRefresh(); } finally { setRefreshing(false); }
+  }
+
   return <div className="page-content inner-page"><PageDate />
     <section className="welcome-row"><div>
       <h1>Ventas</h1>
       <p className="welcome-subtitle">Historial de compras realizadas por clientes de la bodega.</p>
-    </div></section>
+    </div>
+      <button className="button button-secondary" type="button" disabled={refreshing} onClick={handleRefresh}>{refreshing ? "Actualizando..." : "Actualizar"}</button>
+    </section>
 
     <div className="sales-summary">
       <div className="sales-summary-card"><span>Compras pagadas</span><strong>{sales.length}</strong><small>Solo pedidos confirmados</small></div>

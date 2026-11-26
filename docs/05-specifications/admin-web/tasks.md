@@ -19,8 +19,8 @@
 
 - [x] Crear `package.json`, Vite, Dockerfiles, `.dockerignore` e `index.html` de `admin-web`.
 - [x] Crear cliente API con token `bodesmart-admin-token` y rutas `/admin/*`.
-- [x] Replicar tokens de diseño: DM Sans/Manrope, `--font-scale: 1.4`, paleta y componentes base.
-- [x] Crear layout con menú admin propio y bottom nav.
+- [x] Replicar tokens de diseño: DM Sans/Manrope, `--font-scale: 1.4` global (`1.08` en acceso de escritorio), paleta y componentes base.
+- [x] Crear layout con menú admin propio; la bottom nav se sustituyó por el menú desplegable de hamburguesa de ADR-009.
 - [x] Crear login con credencial demo local.
 - [x] Crear Panel con conteos por rol y bodegas.
 - [x] Crear Cuentas con búsqueda, filtro, orden, drawer, confirmación y toast.
